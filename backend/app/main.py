@@ -5,12 +5,16 @@ from contextlib import asynccontextmanager
 from .database import init_db
 from .config import get_settings
 from .routers import position_router
+from .services import get_aisstream_service
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events."""
     init_db()
+
+    aisstream_service = get_aisstream_service()
+    await aisstream_service.start()
 
     yield
 

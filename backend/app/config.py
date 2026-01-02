@@ -8,6 +8,8 @@ _ENV_FILE = _THIS_DIR.parent / ".env"
 
 class Settings(BaseSettings):
     database_url: str  # required
+    vessel_mmsi: str  # required
+    aisstream_api_key: str  # required
     debug: bool = True
 
     class Config:
