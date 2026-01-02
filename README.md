@@ -1,6 +1,6 @@
-# web-app-start
+# where-is-clara
 
-A basic boilerplate for a web app with a React+Typescript frontend and a FastAPI+Python backend.
+A web app to see where my mom is, while she's on a 4 month cruise around the world
 
 ## Local development
 
