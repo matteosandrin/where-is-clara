@@ -1,12 +1,11 @@
 import asyncio
-from datetime import datetime
-from time import timezone
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 import websockets
 import json
 
 from app.database import SessionLocal
-from app.models import Position
+from app.models import NavigationStatus, Position
 from ..config import get_settings
 
 
@@ -75,7 +74,7 @@ class AISStreamService:
 
     async def _connect(self):
         print(f"[AISStreamService] Connecting to AIS stream...")
-        self.websocket = await websockets.connect("wss://stream.aisstream.io/v0/stream")
+        self.websocket = await websockets.connect(settings.aisstream_url)
         subscribe_message = {
             "APIKey": settings.aisstream_api_key,
             "BoundingBoxes": [[[-90, -180], [90, 180]]],
@@ -101,7 +100,7 @@ class AISStreamService:
             latitude=report["Latitude"],
             longitude=report["Longitude"],
             timestamp=self._parse_timestamp(metadata["time_utc"]),
-            navigation_status=report["NavigationalStatus"],
+            navigation_status=NavigationStatus(report["NavigationalStatus"]),
             speed_over_ground=report["Sog"],
             course_over_ground=report["Cog"],
             heading=report["TrueHeading"],
