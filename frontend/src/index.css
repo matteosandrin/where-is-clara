@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+html {
+  font-size: 16px;
+}
+
+body {
+  @apply p-4;
+}
+
+h1 {
+  @apply text-2xl font-bold;
+}
+
+td,
+th {
+  @apply px-2 py-1 text-left border border-black;
+}
+
+input {
+  @apply border border-black;
+}
+
+button {
+  @apply bg-blue-500 text-white px-2 py-1 rounded-md;
+}
