@@ -5,12 +5,12 @@ A web app to see where my mom is, while she's on a 4 month cruise around the wor
 ## Local development
 
 ```bash
-createdb webappstart
+createdb whereisclara
 
 # Backend
 cd backend
 pip install -r requirements.txt
-export DATABASE_URL="postgresql://username:password@localhost:5432/webappstart"
+export DATABASE_URL="postgresql://username:password@localhost:5432/whereisclara"
 uvicorn app.main:app --reload --port 8000
 
 # Frontend (in another terminal)
