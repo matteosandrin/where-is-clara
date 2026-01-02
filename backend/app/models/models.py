@@ -2,6 +2,7 @@ import enum
 from sqlalchemy import Column, Integer, String, Float, DateTime, Enum, func
 from ..database import Base
 
+
 class NavigationStatus(enum.Enum):
     UNKNOWN = -1
     UNDERWAY_USING_ENGINE = 0
@@ -14,6 +15,7 @@ class NavigationStatus(enum.Enum):
     ENGAGED_IN_FISHING = 7
     UNDER_WAY_SAILING = 8
 
+
 class Position(Base):
     __tablename__ = "positions"
 
@@ -21,9 +23,13 @@ class Position(Base):
     mmsi = Column(String, nullable=False)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
-    timestamp = Column(DateTime(timezone=True), nullable=False) # in UTC
-    navigation_status = Column(Enum(NavigationStatus), nullable=False, default=NavigationStatus.UNKNOWN)
-    speed_over_ground = Column(Float, nullable=False) # in knots
-    course_over_ground = Column(Float, nullable=False) # in degrees
+    timestamp = Column(DateTime(timezone=True), nullable=False)  # in UTC
+    navigation_status = Column(
+        Enum(NavigationStatus), nullable=False, default=NavigationStatus.UNKNOWN
+    )
+    speed_over_ground = Column(Float, nullable=False)  # in knots
+    course_over_ground = Column(Float, nullable=False)  # in degrees
     heading = Column(Float, nullable=False)
-    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

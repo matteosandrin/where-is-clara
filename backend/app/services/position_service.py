@@ -49,20 +49,28 @@ class AISStreamService:
         while self._running:
             try:
                 await self._connect()
-                self._reconnect_delay = INITIAL_RECONNECT_DELAY  # Reset on successful connection
+                self._reconnect_delay = (
+                    INITIAL_RECONNECT_DELAY  # Reset on successful connection
+                )
                 await self._receive()
             except websockets.ConnectionClosed as e:
-                print(f"[AISStreamService] Connection closed: {e}. Reconnecting in {self._reconnect_delay}s...")
+                print(
+                    f"[AISStreamService] Connection closed: {e}. Reconnecting in {self._reconnect_delay}s..."
+                )
             except websockets.WebSocketException as e:
-                print(f"[AISStreamService] WebSocket error: {e}. Reconnecting in {self._reconnect_delay}s...")
+                print(
+                    f"[AISStreamService] WebSocket error: {e}. Reconnecting in {self._reconnect_delay}s..."
+                )
             except Exception as e:
-                print(f"[AISStreamService] Unexpected error: {e}. Reconnecting in {self._reconnect_delay}s...")
-            
+                print(
+                    f"[AISStreamService] Unexpected error: {e}. Reconnecting in {self._reconnect_delay}s..."
+                )
+
             if self._running:
                 await asyncio.sleep(self._reconnect_delay)
                 self._reconnect_delay = min(
                     self._reconnect_delay * RECONNECT_BACKOFF_FACTOR,
-                    MAX_RECONNECT_DELAY
+                    MAX_RECONNECT_DELAY,
                 )
 
     async def _connect(self):
@@ -71,7 +79,7 @@ class AISStreamService:
         subscribe_message = {
             "APIKey": settings.aisstream_api_key,
             "BoundingBoxes": [[[-90, -180], [90, 180]]],
-            "FiltersShipMMSI": [self.mmsi]
+            "FiltersShipMMSI": [self.mmsi],
         }
         await self.websocket.send(json.dumps(subscribe_message))
         print(f"[AISStreamService] Connected and subscribed for MMSI {self.mmsi}")
@@ -83,21 +91,20 @@ class AISStreamService:
             message_type = message["MessageType"]
             if message_type == "PositionReport":
                 self._store_position(message)
-        
 
     def _store_position(self, message: dict):
         db: Session = SessionLocal()
-        report = message['Message']['PositionReport']
-        metadata = message['MetaData']
+        report = message["Message"]["PositionReport"]
+        metadata = message["MetaData"]
         position = Position(
-            mmsi=metadata['MMSI'],
-            latitude=report['Latitude'],
-            longitude=report['Longitude'],
-            timestamp=self._parse_timestamp(metadata['time_utc']),
-            navigation_status=report['NavigationalStatus'],
-            speed_over_ground=report['Sog'],
-            course_over_ground=report['Cog'],
-            heading=report['TrueHeading'],
+            mmsi=metadata["MMSI"],
+            latitude=report["Latitude"],
+            longitude=report["Longitude"],
+            timestamp=self._parse_timestamp(metadata["time_utc"]),
+            navigation_status=report["NavigationalStatus"],
+            speed_over_ground=report["Sog"],
+            course_over_ground=report["Cog"],
+            heading=report["TrueHeading"],
         )
         db.add(position)
         db.commit()
@@ -106,9 +113,13 @@ class AISStreamService:
 
     def _parse_timestamp(self, datetime_str: int):
         datetime_str = datetime_str[:19]
-        return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=timezone.utc
+        )
+
 
 _aisstream_service: AISStreamService | None = None
+
 
 def get_aisstream_service():
     global _aisstream_service

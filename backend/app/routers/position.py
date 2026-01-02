@@ -11,14 +11,20 @@ router = APIRouter(
     tags=["position"],
 )
 
+
 @router.get(f"/")
 async def get_latest_position_default_vessel(db: Session = Depends(get_db)):
     return await get_latest_position(settings.vessel_mmsi, db)
 
+
 @router.get(f"/<mmsi>")
 async def get_latest_position(mmsi: str, db: Session = Depends(get_db)):
-    position = db.query(Position).filter(Position.mmsi == mmsi).order_by(Position.timestamp.desc()).first()
+    position = (
+        db.query(Position)
+        .filter(Position.mmsi == mmsi)
+        .order_by(Position.timestamp.desc())
+        .first()
+    )
     if not position:
         raise HTTPException(status_code=404, detail="Position not found")
     return position
-
