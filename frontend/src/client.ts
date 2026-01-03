@@ -37,4 +37,3 @@ export const positionApi = {
       `/position/range/${mmsi || ""}?${fromTs ? `from_ts=${fromTs}` : ""}${toTs ? `&to_ts=${toTs}` : ""}`,
     ),
 };
-
