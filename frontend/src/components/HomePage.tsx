@@ -1,21 +1,72 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Map, { Source, Layer, NavigationControl } from "react-map-gl/mapbox";
-import type { LayerProps } from "react-map-gl/mapbox";
+import type { LayerProps, MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { positionApi } from "../client";
 import type { Position } from "../types";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
+const DARK_BLUE = "#193cb8";
+
 const lineLayerStyle: LayerProps = {
   id: "route-line",
   type: "line",
   paint: {
-    "line-color": "#0ea5e9",
+    "line-color": DARK_BLUE,
     "line-width": 3,
     "line-opacity": 0.85,
   },
 };
+
+const arrowLayerStyle: LayerProps = {
+  id: "arrows",
+  type: "symbol",
+  layout: {
+    "icon-image": "direction-arrow",
+    "icon-size": 0.6,
+    "icon-rotate": ["get", "course"],
+    "icon-rotation-alignment": "map",
+    "icon-allow-overlap": true,
+    "icon-ignore-placement": true,
+  },
+  minzoom: 9,
+};
+
+const pointLayerStyle: LayerProps = {
+  id: "points",
+  type: "circle",
+  paint: {
+    "circle-color": DARK_BLUE,
+    "circle-radius": 5,
+  },
+  maxzoom: 9,
+};
+
+// Create an arrow icon as a data URL
+function createArrowIcon(): HTMLImageElement {
+  const size = 48;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+
+  // Draw arrow pointing up (0 degrees = north)
+  ctx.fillStyle = DARK_BLUE;
+
+  ctx.beginPath();
+  ctx.moveTo(size / 2, 4); // Top point
+  ctx.lineTo(size - 10, size - 6); // Bottom right
+  ctx.lineTo(size / 2, size - 16); // Bottom center notch
+  ctx.lineTo(10, size - 6); // Bottom left
+  ctx.closePath();
+
+  ctx.fill();
+
+  const img = new Image(size, size);
+  img.src = canvas.toDataURL();
+  return img;
+}
 
 export function HomePage() {
   const [positions, setPositions] = useState<Position[]>([]);
@@ -51,7 +102,7 @@ export function HomePage() {
     fetchPositions();
   }, []);
 
-  const geojson = useMemo(() => {
+  const lineGeojson = useMemo(() => {
     if (positions.length === 0) return null;
     return {
       type: "Feature" as const,
@@ -62,6 +113,42 @@ export function HomePage() {
       },
     };
   }, [positions]);
+
+  const pointsGeojson = useMemo(() => {
+    if (positions.length === 0) return null;
+    return {
+      type: "FeatureCollection" as const,
+      features: positions.map((p) => ({
+        type: "Feature" as const,
+        properties: {
+          course: p.course_over_ground,
+        },
+        geometry: {
+          type: "Point" as const,
+          coordinates: [p.longitude, p.latitude],
+        },
+      })),
+    };
+  }, [positions]);
+
+  const onMapLoad = useCallback(
+    (evt: { target: MapRef["getMap"] extends () => infer R ? R : never }) => {
+      const map = evt.target;
+      if (!map.hasImage("direction-arrow")) {
+        const arrowImg = createArrowIcon();
+        arrowImg.onload = () => {
+          if (!map.hasImage("direction-arrow")) {
+            map.addImage("direction-arrow", arrowImg);
+          }
+        };
+        // If already loaded (data URL), add immediately
+        if (arrowImg.complete) {
+          map.addImage("direction-arrow", arrowImg);
+        }
+      }
+    },
+    [],
+  );
 
   const initialViewState = useMemo(() => {
     if (positions.length === 0) {
@@ -104,15 +191,26 @@ export function HomePage() {
     <div className="fixed inset-0">
       <Map
         initialViewState={initialViewState}
-        mapStyle="mapbox://styles/mapbox/navigation-night-v1"
+        mapStyle="mapbox://styles/mapbox/navigation-day-v1"
         mapboxAccessToken={MAPBOX_TOKEN}
         attributionControl={false}
         style={{ width: "100%", height: "100%" }}
+        onLoad={onMapLoad}
       >
         <NavigationControl position="top-right" />
-        {geojson && (
-          <Source id="route" type="geojson" data={geojson}>
+        {lineGeojson && (
+          <Source id="route" type="geojson" data={lineGeojson}>
             <Layer {...lineLayerStyle} />
+          </Source>
+        )}
+        {pointsGeojson && (
+          <Source id="arrows" type="geojson" data={pointsGeojson}>
+            <Layer {...arrowLayerStyle} />
+          </Source>
+        )}
+        {pointsGeojson && (
+          <Source id="points" type="geojson" data={pointsGeojson}>
+            <Layer {...pointLayerStyle} />
           </Source>
         )}
       </Map>
