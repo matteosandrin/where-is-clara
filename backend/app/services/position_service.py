@@ -11,10 +11,10 @@ from ..config import get_settings
 
 settings = get_settings()
 
-INITIAL_RECONNECT_DELAY = 1.0
+INITIAL_RECONNECT_DELAY = 0.250
 MAX_RECONNECT_DELAY = 60.0
 RECONNECT_BACKOFF_FACTOR = 2.0
-CONNECTION_TIMEOUT = 60.0
+CONNECTION_TIMEOUT = 120.0
 
 
 class AISStreamService:
@@ -49,9 +49,8 @@ class AISStreamService:
         while self._running:
             try:
                 await self._connect()
-                self._reconnect_delay = (
-                    INITIAL_RECONNECT_DELAY  # Reset on successful connection
-                )
+                # Reset reconnect delay on successful connection
+                self._reconnect_delay = INITIAL_RECONNECT_DELAY
                 await self._receive()
             except websockets.ConnectionClosed as e:
                 print(
