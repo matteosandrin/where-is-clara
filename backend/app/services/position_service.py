@@ -14,6 +14,7 @@ settings = get_settings()
 INITIAL_RECONNECT_DELAY = 1.0
 MAX_RECONNECT_DELAY = 60.0
 RECONNECT_BACKOFF_FACTOR = 2.0
+CONNECTION_TIMEOUT = 60.0
 
 
 class AISStreamService:
@@ -84,7 +85,17 @@ class AISStreamService:
         print(f"[AISStreamService] Connected and subscribed for MMSI {self.mmsi}")
 
     async def _receive(self):
-        async for message_json in self.websocket:
+        while True:
+            try:
+                message_json = await asyncio.wait_for(
+                    self.websocket.recv(), timeout=CONNECTION_TIMEOUT
+                )
+            except asyncio.TimeoutError:
+                print(
+                    f"[AISStreamService] No message received in {CONNECTION_TIMEOUT}s, reconnecting..."
+                )
+                await self.websocket.close()
+                return
             print(f"[AISStreamService] Received message: {message_json}")
             message = json.loads(message_json)
             message_type = message["MessageType"]
