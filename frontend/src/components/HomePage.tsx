@@ -8,6 +8,7 @@ import type { Position } from "../types";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const DARK_BLUE = "#193cb8";
+const GREEN = "#7CDD66";
 
 const lineLayerStyle: LayerProps = {
   id: "route-line",
@@ -33,18 +34,24 @@ const arrowLayerStyle: LayerProps = {
   minzoom: 9,
 };
 
-const pointLayerStyle: LayerProps = {
-  id: "points",
-  type: "circle",
-  paint: {
-    "circle-color": DARK_BLUE,
-    "circle-radius": 5,
+const latestArrowLayerStyle: LayerProps = {
+  id: "latest-arrow",
+  type: "symbol",
+  layout: {
+    "icon-image": "direction-arrow-green",
+    "icon-size": 0.8,
+    "icon-rotate": ["get", "course"],
+    "icon-rotation-alignment": "map",
+    "icon-allow-overlap": true,
+    "icon-ignore-placement": true,
   },
-  maxzoom: 9,
 };
 
 // Create an arrow icon as a data URL
-function createArrowIcon(): HTMLImageElement {
+function createArrowIcon(
+  fillColor: string,
+  strokeColor: string | null,
+): HTMLImageElement {
   const size = 48;
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -52,7 +59,11 @@ function createArrowIcon(): HTMLImageElement {
   const ctx = canvas.getContext("2d")!;
 
   // Draw arrow pointing up (0 degrees = north)
-  ctx.fillStyle = DARK_BLUE;
+  ctx.fillStyle = fillColor;
+  if (strokeColor) {
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 1;
+  }
 
   ctx.beginPath();
   ctx.moveTo(size / 2, 4); // Top point
@@ -62,6 +73,9 @@ function createArrowIcon(): HTMLImageElement {
   ctx.closePath();
 
   ctx.fill();
+  if (strokeColor) {
+    ctx.stroke();
+  }
 
   const img = new Image(size, size);
   img.src = canvas.toDataURL();
@@ -131,21 +145,43 @@ export function HomePage() {
     };
   }, [positions]);
 
+  const latestPointGeojson = useMemo(() => {
+    if (positions.length === 0) return null;
+    const latest = positions[positions.length - 1];
+    return {
+      type: "Feature" as const,
+      properties: {
+        course: latest.course_over_ground,
+      },
+      geometry: {
+        type: "Point" as const,
+        coordinates: [latest.longitude, latest.latitude],
+      },
+    };
+  }, [positions]);
+
   const onMapLoad = useCallback(
     (evt: { target: MapRef["getMap"] extends () => infer R ? R : never }) => {
       const map = evt.target;
-      if (!map.hasImage("direction-arrow")) {
-        const arrowImg = createArrowIcon();
-        arrowImg.onload = () => {
-          if (!map.hasImage("direction-arrow")) {
-            map.addImage("direction-arrow", arrowImg);
+      const loadArrowIcon = (
+        iconName: string,
+        iconColor: string,
+        strokeColor: string | null,
+      ) => {
+        if (!map.hasImage(iconName)) {
+          const arrowImg = createArrowIcon(iconColor, strokeColor);
+          arrowImg.onload = () => {
+            if (!map.hasImage(iconName)) {
+              map.addImage(iconName, arrowImg);
+            }
+          };
+          if (arrowImg.complete) {
+            map.addImage(iconName, arrowImg);
           }
-        };
-        // If already loaded (data URL), add immediately
-        if (arrowImg.complete) {
-          map.addImage("direction-arrow", arrowImg);
         }
-      }
+      };
+      loadArrowIcon("direction-arrow", DARK_BLUE, null);
+      loadArrowIcon("direction-arrow-green", GREEN, "#ffffff");
     },
     [],
   );
@@ -208,9 +244,9 @@ export function HomePage() {
             <Layer {...arrowLayerStyle} />
           </Source>
         )}
-        {pointsGeojson && (
-          <Source id="points" type="geojson" data={pointsGeojson}>
-            <Layer {...pointLayerStyle} />
+        {latestPointGeojson && (
+          <Source id="latest-arrow" type="geojson" data={latestPointGeojson}>
+            <Layer {...latestArrowLayerStyle} />
           </Source>
         )}
       </Map>
