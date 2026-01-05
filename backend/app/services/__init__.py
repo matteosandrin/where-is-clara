@@ -1,3 +1,3 @@
-from .position_service import get_aisstream_service
+from .position_service import get_position_service
 
-__all__ = ["get_aisstream_service"]
+__all__ = ["get_position_service"]

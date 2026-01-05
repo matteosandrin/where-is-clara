@@ -1,137 +1,191 @@
 import asyncio
+import logging
+import random
+import struct
 from datetime import datetime, timezone
+from typing import Any
+
+import requests
 from sqlalchemy.orm import Session
-import websockets
-import json
 
 from app.database import SessionLocal
-from app.models import NavigationStatus, Position
+from app.models import Position
 from ..config import get_settings
 
-
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
-INITIAL_RECONNECT_DELAY = 0.250
-MAX_RECONNECT_DELAY = 60.0
-RECONNECT_BACKOFF_FACTOR = 2.0
-CONNECTION_TIMEOUT = 120.0
+# VesselFinder API constants
+VESSELFINDER_DOMAIN = "https://www.vesselfinder.com"
+VESSELFINDER_SERVICE = "/api/pub"
+COORD_FACTOR = 600000
+XOR32 = 0x55555555
+XOR16 = 0x5555
+
+POLL_INTERVAL_SECONDS = 60 * 5
 
 
-class AISStreamService:
+def _to_int32(x: int) -> int:
+    """Interpret x (0..2^32-1) as signed 32-bit."""
+    x &= 0xFFFFFFFF
+    return x - 0x100000000 if x & 0x80000000 else x
+
+
+def fetch_vessel_track(mmsi: str) -> list[dict[str, Any]]:
+    """
+    Fetch track data from VesselFinder API.
+
+    Returns: list of dicts with keys:
+        timestamp, longitude, latitude, course_over_ground, speed_over_ground
+    """
+    logger.info(f"Fetching track data for MMSI {mmsi}")
+    url = f"{VESSELFINDER_DOMAIN}{VESSELFINDER_SERVICE}/track/{mmsi}"
+    session = requests.Session()
+    session.headers.update(
+        {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/143.0.0.0 Safari/537.36"
+        }
+    )
+
+    r = session.get(url)
+    r.raise_for_status()
+
+    data = r.content
+    if len(data) < 16:
+        return []
+
+    # Ignore any trailing bytes if not a multiple of 16
+    n = len(data) - (len(data) % 16)
+    out: list[dict[str, Any]] = []
+
+    # Record layout (big-endian):
+    #   u32 ts
+    #   i32 lon_enc
+    #   i32 lat_enc
+    #   u16 cog_enc
+    #   u16 sog_enc
+    for off in range(0, n, 16):
+        ts, lon_enc, lat_enc, cog_enc, sog_enc = struct.unpack_from(">IiiHH", data, off)
+
+        lon_x = _to_int32(lon_enc ^ XOR32)
+        lat_x = _to_int32(lat_enc ^ XOR32)
+
+        lon = lon_x / COORD_FACTOR
+        lat = lat_x / COORD_FACTOR
+
+        cog = (cog_enc ^ XOR16) / 10.0
+        sog = (sog_enc ^ XOR16) / 10.0
+
+        out.append(
+            {
+                "timestamp": datetime.fromtimestamp(ts, timezone.utc),
+                "longitude": lon,
+                "latitude": lat,
+                "course_over_ground": cog,
+                "speed_over_ground": sog,
+            }
+        )
+
+    return out
+
+
+class PositionService:
+    """Service that polls VesselFinder API and stores new positions in DB."""
+
     def __init__(self, mmsi: str):
-        self.websocket = None
         self.mmsi = mmsi
-        self._receive_task: asyncio.Task | None = None
+        self._poll_task: asyncio.Task | None = None
         self._running = False
-        self._reconnect_delay = INITIAL_RECONNECT_DELAY
 
     async def start(self):
         if self._running:
             return
         self._running = True
-        self._receive_task = asyncio.create_task(self._run())
-        print(f"[AISStreamService] AIS stream started for MMSI {self.mmsi}")
+        self._poll_task = asyncio.create_task(self._poll_loop())
+        logger.info(f"PositionService started for MMSI {self.mmsi}")
 
     async def stop(self):
         self._running = False
-        if self.websocket:
-            await self.websocket.close()
-        if self._receive_task:
-            self._receive_task.cancel()
+        if self._poll_task:
+            self._poll_task.cancel()
             try:
-                await self._receive_task
+                await self._poll_task
             except asyncio.CancelledError:
                 pass
-        print(f"[AISStreamService] AIS stream stopped for MMSI {self.mmsi}")
+        logger.info(f"PositionService stopped for MMSI {self.mmsi}")
 
-    async def _run(self):
-        """Main loop that handles connection and reconnection."""
+    async def _poll_loop(self):
         while self._running:
             try:
-                await self._connect()
-                # Reset reconnect delay on successful connection
-                self._reconnect_delay = INITIAL_RECONNECT_DELAY
-                await self._receive()
-            except websockets.ConnectionClosed as e:
-                print(
-                    f"[AISStreamService] Connection closed: {e}. Reconnecting in {self._reconnect_delay}s..."
-                )
-            except websockets.WebSocketException as e:
-                print(
-                    f"[AISStreamService] WebSocket error: {e}. Reconnecting in {self._reconnect_delay}s..."
-                )
+                await self._poll_and_store()
             except Exception as e:
-                print(
-                    f"[AISStreamService] Unexpected error: {e}. Reconnecting in {self._reconnect_delay}s..."
-                )
+                logger.error(f"Error polling VesselFinder: {e}")
 
-            if self._running:
-                await asyncio.sleep(self._reconnect_delay)
-                self._reconnect_delay = min(
-                    self._reconnect_delay * RECONNECT_BACKOFF_FACTOR,
-                    MAX_RECONNECT_DELAY,
-                )
+            await asyncio.sleep(POLL_INTERVAL_SECONDS + random.random() * 60)
 
-    async def _connect(self):
-        print(f"[AISStreamService] Connecting to AIS stream...")
-        self.websocket = await websockets.connect(settings.aisstream_url)
-        subscribe_message = {
-            "APIKey": settings.aisstream_api_key,
-            "BoundingBoxes": [[[-90, -180], [90, 180]]],
-            "FiltersShipMMSI": [self.mmsi],
-        }
-        await self.websocket.send(json.dumps(subscribe_message))
-        print(f"[AISStreamService] Connected and subscribed for MMSI {self.mmsi}")
+    async def _poll_and_store(self):
+        """Fetch track from VesselFinder and store new positions."""
+        # Run the blocking HTTP request in a thread pool
+        loop = asyncio.get_event_loop()
+        track_points = await loop.run_in_executor(None, fetch_vessel_track, self.mmsi)
 
-    async def _receive(self):
-        while True:
-            try:
-                message_json = await asyncio.wait_for(
-                    self.websocket.recv(), timeout=CONNECTION_TIMEOUT
-                )
-            except asyncio.TimeoutError:
-                print(
-                    f"[AISStreamService] No message received in {CONNECTION_TIMEOUT}s, reconnecting..."
-                )
-                await self.websocket.close()
-                return
-            print(f"[AISStreamService] Received message: {message_json}")
-            message = json.loads(message_json)
-            message_type = message["MessageType"]
-            if message_type == "PositionReport":
-                self._store_position(message)
+        if not track_points:
+            logger.debug(f"No track points returned for MMSI {self.mmsi}")
+            return
 
-    def _store_position(self, message: dict):
+        # Get the last stored position timestamp from DB
         db: Session = SessionLocal()
-        report = message["Message"]["PositionReport"]
-        metadata = message["MetaData"]
-        position = Position(
-            mmsi=metadata["MMSI"],
-            latitude=report["Latitude"],
-            longitude=report["Longitude"],
-            timestamp=self._parse_timestamp(metadata["time_utc"]),
-            navigation_status=NavigationStatus(report["NavigationalStatus"]),
-            speed_over_ground=report["Sog"],
-            course_over_ground=report["Cog"],
-            heading=report["TrueHeading"],
-        )
-        db.add(position)
-        db.commit()
-        db.refresh(position)
-        return position
+        try:
+            last_position = (
+                db.query(Position)
+                .filter(Position.mmsi == self.mmsi)
+                .order_by(Position.timestamp.desc())
+                .first()
+            )
+            last_timestamp = last_position.timestamp if last_position else None
 
-    def _parse_timestamp(self, datetime_str: int):
-        datetime_str = datetime_str[:19]
-        return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S").replace(
-            tzinfo=timezone.utc
-        )
+            # Filter to only new positions (after the last stored one)
+            new_points = [
+                p
+                for p in track_points
+                if last_timestamp is None or p["timestamp"] > last_timestamp
+            ]
+
+            if not new_points:
+                logger.debug(f"No new positions to store for MMSI {self.mmsi}")
+                return
+
+            new_points.sort(key=lambda p: p["timestamp"])
+
+            for point in new_points:
+                position = Position(
+                    mmsi=self.mmsi,
+                    latitude=point["latitude"],
+                    longitude=point["longitude"],
+                    timestamp=point["timestamp"],
+                    speed_over_ground=point["speed_over_ground"],
+                    course_over_ground=point["course_over_ground"],
+                )
+                db.add(position)
+
+            db.commit()
+            logger.info(
+                f"Stored {len(new_points)} new position(s) for MMSI {self.mmsi}"
+            )
+
+        finally:
+            db.close()
 
 
-_aisstream_service: AISStreamService | None = None
+_position_service: PositionService | None = None
 
 
-def get_aisstream_service():
-    global _aisstream_service
-    if _aisstream_service is None:
-        _aisstream_service = AISStreamService(settings.vessel_mmsi)
-    return _aisstream_service
+def get_position_service() -> PositionService:
+    """Get the singleton PositionService instance."""
+    global _position_service
+    if _position_service is None:
+        _position_service = PositionService(settings.vessel_mmsi)
+    return _position_service

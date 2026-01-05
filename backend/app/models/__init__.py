@@ -1,3 +1,3 @@
-from .models import Position, NavigationStatus
+from .models import Position
 
-__all__ = ["Position", "NavigationStatus"]
+__all__ = ["Position"]
