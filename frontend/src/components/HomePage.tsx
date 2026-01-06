@@ -161,7 +161,8 @@ export function HomePage() {
     if (!settings) return;
     fetchPositions();
     // Fetch positions every 10 seconds
-    setInterval(() => fetchPositions(), 10000);
+    const interval = setInterval(() => fetchPositions(), 10000);
+    return () => clearInterval(interval);
   }, [settings, fetchPositions]);
 
   const lineGeojson = useMemo(() => {
