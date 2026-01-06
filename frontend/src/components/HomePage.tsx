@@ -93,6 +93,42 @@ export function HomePage() {
   );
   const [settings, setSettings] = useState<Settings | null>(null);
 
+  const fetchPositions = useCallback(async () => {
+    console.log("fetching positions");
+    try {
+      const fromTs = settings?.cruise_start_date || null;
+      const data = await positionApi.getRange(
+        settings?.vessel_mmsi || null,
+        fromTs,
+        null,
+      );
+      // Sort by timestamp ascending for proper line drawing
+      const sorted = data.sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+      );
+      // Only keep points that are at least 10 meters apart
+      const MIN_DISTANCE_METERS = 10;
+      const filtered = sorted.filter((p, i, arr) => {
+        if (i === 0) return true;
+        const prev = arr[i - 1];
+        const dist = distance(
+          [prev.longitude, prev.latitude],
+          [p.longitude, p.latitude],
+          { units: "meters" },
+        );
+        return dist > MIN_DISTANCE_METERS;
+      });
+      setPositions(filtered);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch positions",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [settings]);
+
   useEffect(() => {
     async function fetchSettings() {
       const data = await settingsApi.getSettings();
@@ -103,42 +139,10 @@ export function HomePage() {
 
   useEffect(() => {
     if (!settings) return;
-    async function fetchPositions() {
-      try {
-        const fromTs = settings?.cruise_start_date || null;
-        const data = await positionApi.getRange(
-          settings?.vessel_mmsi || null,
-          fromTs,
-          null,
-        );
-        // Sort by timestamp ascending for proper line drawing
-        const sorted = data.sort(
-          (a, b) =>
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-        );
-        // Only keep points that are at least 10 meters apart
-        const MIN_DISTANCE_METERS = 10;
-        const filtered = sorted.filter((p, i, arr) => {
-          if (i === 0) return true;
-          const prev = arr[i - 1];
-          const dist = distance(
-            [prev.longitude, prev.latitude],
-            [p.longitude, p.latitude],
-            { units: "meters" },
-          );
-          return dist > MIN_DISTANCE_METERS;
-        });
-        setPositions(filtered);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch positions",
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchPositions();
-  }, [settings]);
+    // Fetch positions every 10 seconds
+    setInterval(() => fetchPositions(), 10000);
+  }, [settings, fetchPositions]);
 
   const lineGeojson = useMemo(() => {
     if (positions.length === 0) return null;
