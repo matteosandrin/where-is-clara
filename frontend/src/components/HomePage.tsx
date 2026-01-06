@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import Map, { Source, Layer, NavigationControl } from "react-map-gl/mapbox";
 import type { LayerProps, MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
+import distance from "@turf/distance";
 import { positionApi, settingsApi } from "../client";
 import type { Position, Settings } from "../types";
 import { PositionModal } from "./PositionModal";
@@ -114,7 +115,19 @@ export function HomePage() {
           (a, b) =>
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
         );
-        setPositions(sorted);
+        // Only keep points that are at least 10 meters apart
+        const MIN_DISTANCE_METERS = 10;
+        const filtered = sorted.filter((p, i, arr) => {
+          if (i === 0) return true;
+          const prev = arr[i - 1];
+          const dist = distance(
+            [prev.longitude, prev.latitude],
+            [p.longitude, p.latitude],
+            { units: "meters" },
+          );
+          return dist > MIN_DISTANCE_METERS;
+        });
+        setPositions(filtered);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to fetch positions",
