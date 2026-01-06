@@ -2,8 +2,8 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import Map, { Source, Layer, NavigationControl } from "react-map-gl/mapbox";
 import type { LayerProps, MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { positionApi } from "../client";
-import type { Position } from "../types";
+import { positionApi, settingsApi } from "../client";
+import type { Position, Settings } from "../types";
 import { PositionModal } from "./PositionModal";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -90,18 +90,24 @@ export function HomePage() {
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(
     null,
   );
+  const [settings, setSettings] = useState<Settings | null>(null);
+
+  useEffect(() => {
+    async function fetchSettings() {
+      const data = await settingsApi.getSettings();
+      setSettings(data);
+    }
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     async function fetchPositions() {
       try {
-        const now = new Date();
-        const thirtyDaysAgo = new Date(
-          now.getTime() - 30 * 24 * 60 * 60 * 1000,
-        );
+        const fromTs = settings?.cruise_start_date || null;
         const data = await positionApi.getRange(
+          settings?.vessel_mmsi || null,
+          fromTs,
           null,
-          thirtyDaysAgo.toISOString(),
-          now.toISOString(),
         );
         // Sort by timestamp ascending for proper line drawing
         const sorted = data.sort(
@@ -118,7 +124,7 @@ export function HomePage() {
       }
     }
     fetchPositions();
-  }, []);
+  }, [settings]);
 
   const lineGeojson = useMemo(() => {
     if (positions.length === 0) return null;
@@ -283,7 +289,7 @@ export function HomePage() {
         {selectedPosition && (
           <PositionModal
             position={selectedPosition}
-            title="MSC Magnifica"
+            title={settings?.vessel_name || ""}
             isOpen={true}
             onClose={handleCloseModal}
           />

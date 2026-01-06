@@ -18,7 +18,7 @@ async def get_latest_position_default_vessel(db: Session = Depends(get_db)):
     return await get_latest_position(settings.vessel_mmsi, db)
 
 
-@router.get(f"/latest/<mmsi>")
+@router.get("/latest/{mmsi}")
 async def get_latest_position(mmsi: str, db: Session = Depends(get_db)):
     position = (
         db.query(Position)
@@ -40,7 +40,7 @@ async def get_positions_in_range_default_vessel(
     return await get_positions_in_range(settings.vessel_mmsi, from_ts, to_ts, db)
 
 
-@router.get(f"/range/<mmsi>")
+@router.get("/range/{mmsi}")
 async def get_positions_in_range(
     mmsi: str,
     from_ts: datetime | None = None,

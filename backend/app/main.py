@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from .database import init_db
 from .config import get_settings
-from .routers import position_router
+from .routers import position_router, settings_router
 from .services import get_position_service
 
 
@@ -47,6 +47,7 @@ app.add_middleware(
 )
 
 app.include_router(position_router, prefix="/api")
+app.include_router(settings_router, prefix="/api")
 
 
 @app.get("/")

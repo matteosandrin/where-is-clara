@@ -1,4 +1,4 @@
-import type { Position } from "./types";
+import type { Position, Settings } from "./types";
 
 const API_HOST = import.meta.env.VITE_API_HOST || "";
 const API_BASE = `${API_HOST}/api`;
@@ -36,4 +36,8 @@ export const positionApi = {
     apiFetch<Position[]>(
       `/position/range/${mmsi || ""}?${fromTs ? `from_ts=${fromTs}` : ""}${toTs ? `&to_ts=${toTs}` : ""}`,
     ),
+};
+
+export const settingsApi = {
+  getSettings: async () => apiFetch<Settings>(`/settings/`),
 };

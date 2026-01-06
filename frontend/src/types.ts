@@ -9,3 +9,9 @@ export interface Position {
   course_over_ground: number;
   heading: number;
 }
+
+export interface Settings {
+  vessel_mmsi: string;
+  vessel_name: string;
+  cruise_start_date: string;
+}
