@@ -317,8 +317,6 @@ export function HomePage() {
               {positions.length}
             </span>{" "}
             positions
-            <span className="text-slate-500 mx-2">•</span>
-            Last 30 days
           </p>
         </div>
       )}
