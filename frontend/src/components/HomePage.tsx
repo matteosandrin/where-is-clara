@@ -102,6 +102,7 @@ export function HomePage() {
   }, []);
 
   useEffect(() => {
+    if (!settings) return;
     async function fetchPositions() {
       try {
         const fromTs = settings?.cruise_start_date || null;
