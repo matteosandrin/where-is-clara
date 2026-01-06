@@ -4,6 +4,7 @@ import type { LayerProps, MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { positionApi } from "../client";
 import type { Position } from "../types";
+import { PositionModal } from "./PositionModal";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -86,6 +87,9 @@ export function HomePage() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPosition, setSelectedPosition] = useState<Position | null>(
+    null,
+  );
 
   useEffect(() => {
     async function fetchPositions() {
@@ -136,6 +140,7 @@ export function HomePage() {
         type: "Feature" as const,
         properties: {
           course: p.course_over_ground,
+          id: p.id,
         },
         geometry: {
           type: "Point" as const,
@@ -152,6 +157,7 @@ export function HomePage() {
       type: "Feature" as const,
       properties: {
         course: latest.course_over_ground,
+        id: latest.id,
       },
       geometry: {
         type: "Point" as const,
@@ -185,6 +191,29 @@ export function HomePage() {
     },
     [],
   );
+
+  const onPointClick = useCallback(
+    (event: any) => {
+      const features = event.features;
+      if (!features || features.length === 0) {
+        return;
+      }
+
+      const clickedFeature = features[0];
+      const matchingPosition = positions.find(
+        (p) => p.id === clickedFeature.properties.id,
+      );
+      if (!matchingPosition) {
+        return;
+      }
+      setSelectedPosition(matchingPosition);
+    },
+    [positions],
+  );
+
+  const handleCloseModal = useCallback(() => {
+    setSelectedPosition(null);
+  }, []);
 
   const initialViewState = useMemo(() => {
     if (positions.length === 0) {
@@ -232,6 +261,8 @@ export function HomePage() {
         attributionControl={false}
         style={{ width: "100%", height: "100%" }}
         onLoad={onMapLoad}
+        onClick={onPointClick}
+        interactiveLayerIds={["arrows", "latest-arrow"]}
       >
         <NavigationControl position="top-right" />
         {lineGeojson && (
@@ -248,6 +279,14 @@ export function HomePage() {
           <Source id="latest-arrow" type="geojson" data={latestPointGeojson}>
             <Layer {...latestArrowLayerStyle} />
           </Source>
+        )}
+        {selectedPosition && (
+          <PositionModal
+            position={selectedPosition}
+            title="MSC Magnifica"
+            isOpen={true}
+            onClose={handleCloseModal}
+          />
         )}
       </Map>
 

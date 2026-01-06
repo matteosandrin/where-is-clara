@@ -7,3 +7,16 @@ html {
 body {
   @apply p-0 m-0;
 }
+
+/* Style Mapbox Popup */
+.position-popup .mapboxgl-popup-content {
+  @apply bg-transparent p-0 shadow-none border-none w-fit;
+}
+
+.position-popup .mapboxgl-popup-tip {
+  @apply !border-t-slate-900/95;
+}
+
+.position-popup .mapboxgl-popup-close-button {
+  @apply text-slate-400 hover:text-slate-200 text-xl w-6 h-6 right-3 top-3;
+}
