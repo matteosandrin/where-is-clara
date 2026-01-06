@@ -6,6 +6,7 @@ import distance from "@turf/distance";
 import { positionApi, settingsApi } from "../client";
 import type { Position, Settings } from "../types";
 import { PositionModal } from "./PositionModal";
+import { CurrentPositionPanel } from "./CurrentPositionPanel";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -84,26 +85,6 @@ function createArrowIcon(
   return img;
 }
 
-function formatTimeUntilNow(timestamp: string) {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const diffMinutes = Math.floor(diff / 1000 / 60);
-
-  if (diffMinutes < 60) {
-    return `${diffMinutes}min ago`;
-  }
-
-  const hours = Math.floor(diffMinutes / 60);
-  const minutes = diffMinutes % 60;
-
-  if (minutes === 0) {
-    return `${hours}hr ago`;
-  }
-
-  return `${hours}hr ${minutes}min ago`;
-}
-
 export function HomePage() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,8 +141,8 @@ export function HomePage() {
   useEffect(() => {
     if (!settings) return;
     fetchPositions();
-    // Fetch positions every 10 seconds
-    const interval = setInterval(() => fetchPositions(), 10000);
+    // Fetch positions every 5 minutes
+    const interval = setInterval(() => fetchPositions(), 1000 * 60 * 5);
     return () => clearInterval(interval);
   }, [settings, fetchPositions]);
 
@@ -337,61 +318,11 @@ export function HomePage() {
 
       {positions.length > 0 && (
         <>
-          {/* Latest Position Info Panel */}
-          <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4 shadow-2xl min-w-[260px]">
-            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-700/50">
-              <div
-                className="w-3 h-3 rounded-full animate-pulse"
-                style={{ backgroundColor: GREEN }}
-              />
-              <h3 className="text-slate-100 font-semibold text-sm tracking-wide">
-                {settings?.vessel_name || "Latest Position"}
-              </h3>
-            </div>
-
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Last position</span>
-                <span className="text-slate-200 font-mono text-xs">
-                  {formatTimeUntilNow(
-                    positions[positions.length - 1].timestamp,
-                  )}
-                </span>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-slate-400">Latitude</span>
-                <span className="text-slate-200 font-mono">
-                  {positions[positions.length - 1].latitude.toFixed(5)}°
-                </span>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-slate-400">Longitude</span>
-                <span className="text-slate-200 font-mono">
-                  {positions[positions.length - 1].longitude.toFixed(5)}°
-                </span>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-slate-400">Speed</span>
-                <span className="text-slate-200 font-mono">
-                  {positions[positions.length - 1].speed_over_ground.toFixed(1)}{" "}
-                  kn
-                </span>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-slate-400">Course</span>
-                <span className="text-slate-200 font-mono">
-                  {positions[positions.length - 1].course_over_ground.toFixed(
-                    0,
-                  )}
-                  °
-                </span>
-              </div>
-            </div>
-          </div>
+          <CurrentPositionPanel
+            position={positions[positions.length - 1]}
+            title={settings?.vessel_name || ""}
+            dotColor={GREEN}
+          />
 
           {/* Position Count Badge */}
           <div className="absolute bottom-6 right-6 bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4 shadow-2xl">
