@@ -108,8 +108,8 @@ export function HomePage() {
         (a, b) =>
           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
       );
-      // Only keep points that are at least 10 meters apart
-      const MIN_DISTANCE_METERS = 10;
+      // Only keep points that are at least 25 meters apart
+      const MIN_DISTANCE_METERS = 25;
       const filtered = sorted.filter((p, i, arr) => {
         if (i === 0) return true;
         const prev = arr[i - 1];

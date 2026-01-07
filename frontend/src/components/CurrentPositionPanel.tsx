@@ -34,11 +34,11 @@ export function CurrentPositionPanel({
 }: CurrentPositionPanelProps) {
   const [, setTick] = useState(0);
 
-  // Redraw the component every 30 seconds to update the "time until now" text
+  // Redraw the component every 5 seconds to update the "time until now" text
   useEffect(() => {
     const interval = setInterval(() => {
       setTick((t) => t + 1);
-    }, 1000 * 30);
+    }, 1000 * 5);
     return () => clearInterval(interval);
   }, []);
 
