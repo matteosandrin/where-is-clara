@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { Position } from "../types";
 
 function formatTimeUntilNow(timestamp: string) {
@@ -31,6 +32,16 @@ export function CurrentPositionPanel({
   title,
   dotColor,
 }: CurrentPositionPanelProps) {
+  const [, setTick] = useState(0);
+
+  // Redraw the component every 30 seconds to update the "time until now" text
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 1000 * 30);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4 shadow-2xl min-w-[260px]">
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-700/50">
