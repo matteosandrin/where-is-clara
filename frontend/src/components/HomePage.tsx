@@ -318,7 +318,6 @@ export function HomePage() {
         interactiveLayerIds={["arrows", "latest-arrow"]}
         projection={"mercator"}
       >
-        <NavigationControl position="top-right" />
         <Source id="cruise-path" type="geojson" data={cruisePathGeojson}>
           <Layer {...cruisePathLayerStyle} />
         </Source>
@@ -366,9 +365,9 @@ export function HomePage() {
           />
 
           {/* Position Count Badge */}
-          <div className="absolute bottom-6 right-6 bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4 shadow-2xl">
+          <div className="absolute bottom-2 right-2 md:bottom-4 md:right-4 bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-xl py-2 px-4 shadow-2xl">
             <p className="text-slate-300 text-sm">
-              <span className="text-sky-400 font-semibold">
+              <span className="font-semibold">
                 {positions.length}
               </span>{" "}
               positions
