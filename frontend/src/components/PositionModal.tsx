@@ -1,5 +1,5 @@
 import { Popup } from "react-map-gl/mapbox";
-import type { Position } from "../types";
+import type { Position } from "../types/types";
 
 interface PositionModalProps {
   position: Position | null;

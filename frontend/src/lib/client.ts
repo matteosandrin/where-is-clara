@@ -1,4 +1,4 @@
-import type { Position, Settings } from "./types";
+import type { Position, Settings } from "../types/types";
 
 const API_HOST = import.meta.env.VITE_API_HOST || "";
 const API_BASE = `${API_HOST}/api`;

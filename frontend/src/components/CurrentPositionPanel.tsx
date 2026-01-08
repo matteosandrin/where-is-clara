@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Position } from "../types";
+import type { Position } from "../types/types";
 
 function formatTimeUntilNow(timestamp: string) {
   const date = new Date(timestamp);
