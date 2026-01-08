@@ -1,12 +1,19 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import Map, { Source, Layer, NavigationControl } from "react-map-gl/mapbox";
+import Map, {
+  Source,
+  Layer,
+  NavigationControl,
+  Marker,
+} from "react-map-gl/mapbox";
 import type { LayerProps, MapRef } from "react-map-gl/mapbox";
+import { PortPin } from "./PortPin";
 import "mapbox-gl/dist/mapbox-gl.css";
 import distance from "@turf/distance";
 import { positionApi, settingsApi } from "../client";
 import type { Position, Settings } from "../types";
 import { PositionModal } from "./PositionModal";
 import { CurrentPositionPanel } from "./CurrentPositionPanel";
+import cruiseData from "../data/cruise.json";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -307,6 +314,16 @@ export function HomePage() {
             <Layer {...latestArrowLayerStyle} />
           </Source>
         )}
+        {cruiseData.ports.map((port, index) => (
+          <Marker
+            key={port.id}
+            longitude={port.lon}
+            latitude={port.lat}
+            anchor="bottom"
+          >
+            <PortPin number={index + 1} />
+          </Marker>
+        ))}
         {selectedPosition && (
           <PositionModal
             position={selectedPosition}
