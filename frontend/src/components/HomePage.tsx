@@ -112,6 +112,7 @@ export function HomePage() {
       const MIN_DISTANCE_METERS = 25;
       const filtered = sorted.filter((p, i, arr) => {
         if (i === 0) return true;
+        if (i === arr.length - 1) return true;
         const prev = arr[i - 1];
         const dist = distance(
           [prev.longitude, prev.latitude],
