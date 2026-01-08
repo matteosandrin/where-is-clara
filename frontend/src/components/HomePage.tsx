@@ -297,6 +297,7 @@ export function HomePage() {
         onLoad={onMapLoad}
         onClick={onPointClick}
         interactiveLayerIds={["arrows", "latest-arrow"]}
+        projection={"mercator"}
       >
         <NavigationControl position="top-right" />
         {lineGeojson && (
