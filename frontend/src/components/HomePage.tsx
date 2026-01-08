@@ -283,7 +283,7 @@ export function HomePage() {
     <div className="fixed inset-0">
       <Map
         initialViewState={initialViewState}
-        mapStyle="mapbox://styles/mapbox/navigation-day-v1"
+        mapStyle="mapbox://styles/mapbox/outdoors-v12"
         mapboxAccessToken={MAPBOX_TOKEN}
         attributionControl={false}
         style={{ width: "100%", height: "100%" }}
