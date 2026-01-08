@@ -367,9 +367,7 @@ export function HomePage() {
           {/* Position Count Badge */}
           <div className="absolute bottom-2 right-2 md:bottom-4 md:right-4 bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-xl py-2 px-4 shadow-2xl">
             <p className="text-slate-300 text-sm">
-              <span className="font-semibold">
-                {positions.length}
-              </span>{" "}
+              <span className="font-semibold">{positions.length}</span>{" "}
               positions
             </p>
           </div>
