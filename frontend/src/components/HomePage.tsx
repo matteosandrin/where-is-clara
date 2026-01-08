@@ -30,6 +30,16 @@ const lineLayerStyle: LayerProps = {
   },
 };
 
+const cruisePathLayerStyle: LayerProps = {
+  id: "cruise-path",
+  type: "line",
+  paint: {
+    "line-color": "#ffffff",
+    "line-width": 2,
+    "line-opacity": 0.4,
+  },
+};
+
 const arrowLayerStyle: LayerProps = {
   id: "arrows",
   type: "symbol",
@@ -200,6 +210,73 @@ export function HomePage() {
     };
   }, [positions]);
 
+  const cruisePathGeojson = useMemo(() => {
+    // Split the path into segments at the antimeridian, interpolating crossing points
+    // This ensures lines cross at ±180° instead of going the long way around
+    const segments: number[][][] = [];
+    let currentSegment: number[][] = [];
+
+    for (let i = 0; i < cruiseData.points.length; i++) {
+      const point = cruiseData.points[i];
+
+      if (currentSegment.length === 0) {
+        currentSegment.push(point);
+      } else {
+        const prevPoint = currentSegment[currentSegment.length - 1];
+        const lonDiff = Math.abs(point[0] - prevPoint[0]);
+
+        // If longitude difference > 180, we're crossing the antimeridian
+        if (lonDiff > 180) {
+          const prevLon = prevPoint[0];
+          const prevLat = prevPoint[1];
+          const currLon = point[0];
+          const currLat = point[1];
+
+          // Calculate the latitude where the line crosses the antimeridian
+          let crossingLat: number;
+
+          if (prevLon < 0 && currLon > 0) {
+            // Crossing from west to east (e.g., -171 to 178)
+            const totalLonChange = (180 - currLon) + (180 + prevLon);
+            const ratio = (180 + prevLon) / totalLonChange;
+            crossingLat = prevLat + ratio * (currLat - prevLat);
+
+            // End current segment at -180, start new segment at +180
+            currentSegment.push([-180, crossingLat]);
+            segments.push(currentSegment);
+            currentSegment = [[180, crossingLat], point];
+          } else {
+            // Crossing from east to west (e.g., 178 to -171)
+            const totalLonChange = (180 - prevLon) + (180 + currLon);
+            const ratio = (180 - prevLon) / totalLonChange;
+            crossingLat = prevLat + ratio * (currLat - prevLat);
+
+            // End current segment at +180, start new segment at -180
+            currentSegment.push([180, crossingLat]);
+            segments.push(currentSegment);
+            currentSegment = [[-180, crossingLat], point];
+          }
+        } else {
+          currentSegment.push(point);
+        }
+      }
+    }
+
+    // Don't forget the last segment
+    if (currentSegment.length > 0) {
+      segments.push(currentSegment);
+    }
+
+    return {
+      type: "Feature" as const,
+      properties: {},
+      geometry: {
+        type: "MultiLineString" as const,
+        coordinates: segments,
+      },
+    };
+  }, []);
+
   const onMapLoad = useCallback(
     (evt: { target: MapRef["getMap"] extends () => infer R ? R : never }) => {
       const map = evt.target;
@@ -300,6 +377,9 @@ export function HomePage() {
         projection={"mercator"}
       >
         <NavigationControl position="top-right" />
+        <Source id="cruise-path" type="geojson" data={cruisePathGeojson}>
+          <Layer {...cruisePathLayerStyle} />
+        </Source>
         {lineGeojson && (
           <Source id="route" type="geojson" data={lineGeojson}>
             <Layer {...lineLayerStyle} />
