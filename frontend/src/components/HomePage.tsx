@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import Map, { Source, Layer, Marker } from "react-map-gl/mapbox";
-import type { LayerProps, MapRef } from "react-map-gl/mapbox";
+import type { MapRef } from "react-map-gl/mapbox";
 import { PortPin } from "./PortPin";
 import "mapbox-gl/dist/mapbox-gl.css";
 import distance from "@turf/distance";
@@ -11,7 +11,12 @@ import { CurrentPositionPanel } from "./CurrentPositionPanel";
 import cruiseData from "../data/cruise.json";
 import splitGeoJSON from "geojson-antimeridian-cut";
 import { PortModal } from "./PortModal";
-import { getNextPort, isInPort } from "../lib/utils";
+import {
+  getNextPort,
+  isInPort,
+  predictPosition,
+  createArrowIcon,
+} from "../lib/utils";
 import { DARK_BLUE, GREEN, YELLOW } from "../lib/colors";
 import {
   cruisePathLayerStyle,
@@ -26,75 +31,6 @@ import {
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const ports = cruiseData.ports.map((port) => port as Port);
-
-// Create an arrow icon as a data URL
-function createArrowIcon(
-  fillColor: string,
-  strokeColor: string | null,
-): HTMLImageElement {
-  const size = 48;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-
-  // Draw arrow pointing up (0 degrees = north)
-  ctx.fillStyle = fillColor;
-  if (strokeColor) {
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 1;
-  }
-
-  ctx.beginPath();
-  ctx.moveTo(size / 2, 4); // Top point
-  ctx.lineTo(size - 10, size - 6); // Bottom right
-  ctx.lineTo(size / 2, size - 16); // Bottom center notch
-  ctx.lineTo(10, size - 6); // Bottom left
-  ctx.closePath();
-
-  ctx.fill();
-  if (strokeColor) {
-    ctx.stroke();
-  }
-
-  const img = new Image(size, size);
-  img.src = canvas.toDataURL();
-  return img;
-}
-
-function predictPosition(position: Position): Position {
-  const { latitude, longitude, course_over_ground, speed_over_ground } =
-    position;
-  const elapsedMs =
-    new Date().getTime() - new Date(position.timestamp).getTime();
-
-  // Convert elapsed time from milliseconds to hours
-  const elapsedHours = elapsedMs / (1000 * 60 * 60);
-
-  // Distance traveled in nautical miles
-  const distanceNm = speed_over_ground * elapsedHours;
-
-  // Convert course from degrees to radians
-  const courseRad = (course_over_ground * Math.PI) / 180;
-  const latRad = (latitude * Math.PI) / 180;
-
-  // 1 nautical mile = 1 arc minute of latitude = 1/60 degree
-  // Change in latitude (degrees)
-  const deltaLat = (distanceNm * Math.cos(courseRad)) / 60;
-
-  // Change in longitude (degrees) - adjusted for latitude
-  // At higher latitudes, longitude lines converge, so we divide by cos(lat)
-  const deltaLon = (distanceNm * Math.sin(courseRad)) / (60 * Math.cos(latRad));
-
-  return {
-    ...position,
-    id: position.id + "-predicted",
-    timestamp: new Date().toISOString(),
-    latitude: latitude + deltaLat,
-    longitude: longitude + deltaLon,
-    is_predicted: true,
-  } as Position;
-}
 
 export function HomePage() {
   const [settings, setSettings] = useState<Settings | null>(null);
