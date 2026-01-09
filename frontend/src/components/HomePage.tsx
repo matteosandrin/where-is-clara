@@ -12,12 +12,9 @@ import cruiseData from "../data/cruise.json";
 import splitGeoJSON from "geojson-antimeridian-cut";
 import { PortModal } from "./PortModal";
 import { getNextPort, isInPort } from "../lib/utils";
+import { DARK_BLUE, GREEN, YELLOW } from "../lib/colors";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
-
-const DARK_BLUE = "#193cb8";
-const GREEN = "#7CDD66";
-const YELLOW = "#EAC110";
 
 const ports = cruiseData.ports.map((port) => port as Port);
 
