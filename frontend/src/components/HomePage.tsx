@@ -323,6 +323,7 @@ export function HomePage() {
         mapStyle="mapbox://styles/mapbox/outdoors-v12"
         mapboxAccessToken={MAPBOX_TOKEN}
         attributionControl={false}
+        dragRotate={false}
         style={{ width: "100%", height: "100%" }}
         onLoad={onMapLoad}
         onClick={onPointClick}
