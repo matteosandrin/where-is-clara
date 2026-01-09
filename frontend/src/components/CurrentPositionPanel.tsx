@@ -43,7 +43,7 @@ export function CurrentPositionPanel({
   }, []);
 
   return (
-    <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4 shadow-2xl min-w-[260px]">
+    <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4 shadow-2xl min-w-[240px]">
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-700/50">
         <div
           className="w-3 h-3 rounded-full animate-pulse"
@@ -54,42 +54,44 @@ export function CurrentPositionPanel({
         </h3>
       </div>
 
-      <div className="flex flex-col gap-2 text-sm">
-        <div className="flex justify-between">
-          <span className="text-slate-400">Last position</span>
-          <span className="text-slate-200 font-mono">
-            {formatTimeUntilNow(position.timestamp)}
-          </span>
-        </div>
+      <table className="text-sm">
+        <tbody>
+          <tr className="">
+            <td className="text-slate-400 pr-4 md:pb-2">Last position</td>
+            <td className="text-slate-200 md:pb-2 font-mono">
+              {formatTimeUntilNow(position.timestamp)}
+            </td>
+          </tr>
 
-        <div className="hidden md:flex justify-between">
-          <span className="text-slate-400">Latitude</span>
-          <span className="text-slate-200 font-mono">
-            {position.latitude.toFixed(5)}°
-          </span>
-        </div>
+          <tr className="hidden md:table-row">
+            <td className="text-slate-400 pr-4 pb-2">Latitude</td>
+            <td className="text-slate-200 pb-2 font-mono">
+              {position.latitude.toFixed(5)}°
+            </td>
+          </tr>
 
-        <div className="hidden md:flex justify-between">
-          <span className="text-slate-400">Longitude</span>
-          <span className="text-slate-200 font-mono">
-            {position.longitude.toFixed(5)}°
-          </span>
-        </div>
+          <tr className="hidden md:table-row">
+            <td className="text-slate-400 pr-4 pb-2">Longitude</td>
+            <td className="text-slate-200 pb-2 font-mono">
+              {position.longitude.toFixed(5)}°
+            </td>
+          </tr>
 
-        <div className="hidden md:flex justify-between">
-          <span className="text-slate-400">Speed</span>
-          <span className="text-slate-200 font-mono">
-            {position.speed_over_ground.toFixed(1)} knots
-          </span>
-        </div>
+          <tr className="hidden md:table-row">
+            <td className="text-slate-400 pr-4 pb-2">Speed</td>
+            <td className="text-slate-200 pb-2 font-mono">
+              {position.speed_over_ground.toFixed(1)} knots
+            </td>
+          </tr>
 
-        <div className="hidden md:flex justify-between">
-          <span className="text-slate-400">Course</span>
-          <span className="text-slate-200 font-mono">
-            {position.course_over_ground.toFixed(1)}°
-          </span>
-        </div>
-      </div>
+          <tr className="hidden md:table-row">
+            <td className="text-slate-400 pr-4">Course</td>
+            <td className="text-slate-200 font-mono">
+              {position.course_over_ground.toFixed(1)}°
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 }

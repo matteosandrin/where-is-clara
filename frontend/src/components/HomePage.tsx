@@ -1,9 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import Map, {
-  Source,
-  Layer,
-  Marker,
-} from "react-map-gl/mapbox";
+import Map, { Source, Layer, Marker } from "react-map-gl/mapbox";
 import type { LayerProps, MapRef } from "react-map-gl/mapbox";
 import { PortPin } from "./PortPin";
 import "mapbox-gl/dist/mapbox-gl.css";

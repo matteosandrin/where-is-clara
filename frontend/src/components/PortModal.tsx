@@ -50,6 +50,12 @@ export function PortModal({ port, isOpen, onClose }: PortModalProps) {
         <table className="text-sm">
           <tbody>
             <tr>
+              <td className="text-slate-400 pr-4 pb-2">Day</td>
+              <td className="font-mono text-xs text-slate-200 pb-2 w-fit">
+                {port.day}
+              </td>
+            </tr>
+            <tr>
               <td className="text-slate-400 pr-4 pb-2">Departure</td>
               <td className="font-mono text-xs text-slate-200 pb-2 w-fit">
                 {formatTimestamp(port.dep_datetime)}
