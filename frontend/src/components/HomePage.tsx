@@ -407,7 +407,6 @@ export function HomePage() {
           <CurrentPositionPanel
             position={positions[positions.length - 1]}
             title={settings?.vessel_name || ""}
-            dotColor={GREEN}
           />
 
           {/* Position Count Badge */}

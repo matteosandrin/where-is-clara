@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Position } from "../types/types";
+import { GREEN, YELLOW } from "../lib/colors";
 
 function formatTimeUntilNow(timestamp: string) {
   const date = new Date(timestamp);
@@ -24,13 +25,11 @@ function formatTimeUntilNow(timestamp: string) {
 interface CurrentPositionPanelProps {
   position: Position;
   title: string;
-  dotColor: string;
 }
 
 export function CurrentPositionPanel({
   position,
   title,
-  dotColor,
 }: CurrentPositionPanelProps) {
   const [, setTick] = useState(0);
 
@@ -42,12 +41,17 @@ export function CurrentPositionPanel({
     return () => clearInterval(interval);
   }, []);
 
+  // If the position is older than 5 minutes, it is yellow
+  const isYellow =
+    new Date().getTime() - new Date(position.timestamp).getTime() >
+    1000 * 60 * 5;
+
   return (
     <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4 shadow-2xl min-w-[240px]">
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-700/50">
         <div
-          className="w-3 h-3 rounded-full animate-pulse"
-          style={{ backgroundColor: dotColor }}
+          className={`w-3 h-3 rounded-full ${!isYellow ? "animate-pulse" : ""}`}
+          style={{ backgroundColor: isYellow ? YELLOW : GREEN }}
         />
         <h3 className="text-slate-100 font-semibold text-sm tracking-wide">
           {title}
