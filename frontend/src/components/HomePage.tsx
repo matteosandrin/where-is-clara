@@ -11,11 +11,14 @@ import { CurrentPositionPanel } from "./CurrentPositionPanel";
 import cruiseData from "../data/cruise.json";
 import splitGeoJSON from "geojson-antimeridian-cut";
 import { PortModal } from "./PortModal";
+import { getNextPort, isInPort } from "../lib/utils";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const DARK_BLUE = "#193cb8";
 const GREEN = "#7CDD66";
+
+const ports = cruiseData.ports.map((port) => port as Port);
 
 const lineLayerStyle: LayerProps = {
   id: "route-line",
@@ -33,7 +36,7 @@ const cruisePathLayerStyle: LayerProps = {
   paint: {
     "line-color": "#ffffff",
     "line-width": 2,
-    "line-opacity": 0.4,
+    "line-opacity": 0.1,
   },
 };
 
@@ -62,6 +65,22 @@ const latestArrowLayerStyle: LayerProps = {
     "icon-allow-overlap": true,
     "icon-ignore-placement": true,
   },
+};
+
+const lineToNextPortLayerStyle: LayerProps = {
+  id: "line-to-next-port",
+  type: "line",
+  paint: {
+    "line-color": "#ffffff",
+    "line-width": 2,
+    "line-opacity": 0.4,
+    "line-dasharray": [8, 5],
+  },
+  layout: {
+    "line-cap": "round",
+    "line-join": "round",
+  },
+  minzoom: 4,
 };
 
 // Create an arrow icon as a data URL
@@ -208,6 +227,30 @@ export function HomePage() {
     };
   }, [positions]);
 
+  const lineToNextPortGeojson = useMemo(() => {
+    if (
+      positions.length === 0 ||
+      isInPort(ports, positions[positions.length - 1])
+    )
+      return null;
+    const nextPort = getNextPort(ports, positions[positions.length - 1]);
+    if (!nextPort) return null;
+    return {
+      type: "Feature" as const,
+      properties: {},
+      geometry: {
+        type: "LineString" as const,
+        coordinates: [
+          [
+            positions[positions.length - 1].longitude,
+            positions[positions.length - 1].latitude,
+          ],
+          [nextPort.lon, nextPort.lat],
+        ],
+      },
+    };
+  }, [positions, ports]);
+
   const cruisePathGeojson = useMemo(() => {
     const lineString = {
       type: "LineString" as const,
@@ -332,18 +375,27 @@ export function HomePage() {
             <Layer {...arrowLayerStyle} />
           </Source>
         )}
+        {lineToNextPortGeojson && (
+          <Source
+            id="line-to-next-port"
+            type="geojson"
+            data={lineToNextPortGeojson}
+          >
+            <Layer {...lineToNextPortLayerStyle} />
+          </Source>
+        )}
         {latestPointGeojson && (
           <Source id="latest-arrow" type="geojson" data={latestPointGeojson}>
             <Layer {...latestArrowLayerStyle} />
           </Source>
         )}
-        {cruiseData.ports.map((port, index) => (
+        {ports.map((port, index) => (
           <Marker
             key={port.id}
             longitude={port.lon}
             latitude={port.lat}
             anchor="bottom"
-            onClick={() => setSelectedPort(port as Port)}
+            onClick={() => setSelectedPort(port)}
           >
             <PortPin number={index + 1} />
           </Marker>
