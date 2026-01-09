@@ -1,5 +1,7 @@
 import { Popup } from "react-map-gl/mapbox";
 import type { Position } from "../types/types";
+import { formatTimestamp } from "../lib/utils";
+import { X } from "lucide-react";
 
 interface PositionModalProps {
   position: Position | null;
@@ -18,32 +20,25 @@ export function PositionModal({
     return null;
   }
 
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      timeZoneName: "short",
-    });
-  };
-
   return (
     <Popup
       longitude={position.longitude}
       latitude={position.latitude}
       onClose={onClose}
       anchor="bottom"
-      closeButton={true}
+      closeButton={false}
       closeOnClick={false}
       className="position-popup"
     >
       <div className="bg-slate-900/95 backdrop-blur-sm rounded-lg p-4">
-        <div className="flex items-center mb-3 gap-2">
+        <div className="flex items-center justify-between mb-3 gap-2">
           <h2 className="text-slate-200 text-lg font-semibold">{title}</h2>
+          <button
+            className="text-slate-400 hover:text-slate-200 text-xl w-4 h-4"
+            onClick={onClose}
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         <table className="text-sm">

@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import Map, {
   Source,
   Layer,
-  NavigationControl,
   Marker,
 } from "react-map-gl/mapbox";
 import type { LayerProps, MapRef } from "react-map-gl/mapbox";
@@ -10,11 +9,12 @@ import { PortPin } from "./PortPin";
 import "mapbox-gl/dist/mapbox-gl.css";
 import distance from "@turf/distance";
 import { positionApi, settingsApi } from "../lib/client";
-import type { Position, Settings } from "../types/types";
+import type { Port, Position, Settings } from "../types/types";
 import { PositionModal } from "./PositionModal";
 import { CurrentPositionPanel } from "./CurrentPositionPanel";
 import cruiseData from "../data/cruise.json";
 import splitGeoJSON from "geojson-antimeridian-cut";
+import { PortModal } from "./PortModal";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -110,6 +110,7 @@ export function HomePage() {
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(
     null,
   );
+  const [selectedPort, setSelectedPort] = useState<Port | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
 
   const fetchPositions = useCallback(async () => {
@@ -264,8 +265,12 @@ export function HomePage() {
     [positions],
   );
 
-  const handleCloseModal = useCallback(() => {
+  const handleClosePositionModal = useCallback(() => {
     setSelectedPosition(null);
+  }, []);
+
+  const handleClosePortModal = useCallback(() => {
+    setSelectedPort(null);
   }, []);
 
   const initialViewState = useMemo(() => {
@@ -342,6 +347,7 @@ export function HomePage() {
             longitude={port.lon}
             latitude={port.lat}
             anchor="bottom"
+            onClick={() => setSelectedPort(port as Port)}
           >
             <PortPin number={index + 1} />
           </Marker>
@@ -351,7 +357,14 @@ export function HomePage() {
             position={selectedPosition}
             title={settings?.vessel_name || ""}
             isOpen={true}
-            onClose={handleCloseModal}
+            onClose={handleClosePositionModal}
+          />
+        )}
+        {selectedPort && (
+          <PortModal
+            port={selectedPort}
+            isOpen={true}
+            onClose={handleClosePortModal}
           />
         )}
       </Map>

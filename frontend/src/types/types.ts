@@ -10,6 +10,24 @@ export interface Position {
   heading: number;
 }
 
+export interface Port {
+  dep_datetime: string;
+  lat: number;
+  lon: number;
+  day: string;
+  id: string;
+  title: string;
+  locode: string;
+  country: {
+    flag: {
+      code: string;
+      name: string;
+    };
+    title: string;
+  };
+  timezone: string;
+}
+
 export interface Settings {
   vessel_mmsi: string;
   vessel_name: string;
