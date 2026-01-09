@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import Map, { Source, Layer, Marker } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
 import { PortPin } from "./PortPin";
@@ -8,6 +8,7 @@ import { positionApi, settingsApi } from "../lib/client";
 import type { Port, Position, Settings } from "../types/types";
 import { PositionModal } from "./PositionModal";
 import { CurrentPositionPanel } from "./CurrentPositionPanel";
+import { PortsListPanel } from "./PortsListPanel";
 import cruiseData from "../data/cruise.json";
 import splitGeoJSON from "geojson-antimeridian-cut";
 import { PortModal } from "./PortModal";
@@ -33,6 +34,7 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 const ports = cruiseData.ports.map((port) => port as Port);
 
 export function HomePage() {
+  const mapRef = useRef<MapRef>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
@@ -277,6 +279,14 @@ export function HomePage() {
     setSelectedPort(null);
   }, []);
 
+  const handlePortListClick = useCallback((port: Port) => {
+    mapRef.current?.flyTo({
+      center: [port.lon, port.lat],
+      zoom: 8,
+      duration: 1500,
+    });
+  }, []);
+
   const initialViewState = useMemo(() => {
     if (positions.length === 0) {
       return { longitude: 0, latitude: 0, zoom: 2 };
@@ -319,6 +329,7 @@ export function HomePage() {
   return (
     <div className="fixed inset-0">
       <Map
+        ref={mapRef}
         initialViewState={initialViewState}
         mapStyle="mapbox://styles/mapbox/outdoors-v12"
         mapboxAccessToken={MAPBOX_TOKEN}
@@ -408,6 +419,12 @@ export function HomePage() {
           <CurrentPositionPanel
             position={positions[positions.length - 1]}
             title={settings?.vessel_name || ""}
+          />
+
+          <PortsListPanel
+            ports={ports}
+            currentPosition={positions[positions.length - 1]}
+            onPortClick={handlePortListClick}
           />
 
           {/* Position Count Badge */}

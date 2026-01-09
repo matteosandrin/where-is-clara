@@ -2,14 +2,7 @@ import { Popup } from "react-map-gl/mapbox";
 import type { Port } from "../types/types";
 import { formatTimestamp } from "../lib/utils";
 import { X } from "lucide-react";
-
-function countryCodeToFlag(code: string): string {
-  return code
-    .toUpperCase()
-    .split("")
-    .map((char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
-    .join("");
-}
+import { getFlagEmoji } from "../lib/utils";
 
 interface PortModalProps {
   port: Port;
@@ -36,7 +29,7 @@ export function PortModal({ port, isOpen, onClose }: PortModalProps) {
         <div className="flex items-center mb-3 gap-2 justify-between">
           <h2 className="text-slate-200 text-lg font-semibold">
             <span className="text-xl -mb-1">
-              {countryCodeToFlag(port.country.flag.code)}
+              {getFlagEmoji(port.country.flag.code)}
             </span>
             <span className="ml-2">{port.title}</span>
           </h2>
