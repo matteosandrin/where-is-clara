@@ -581,7 +581,7 @@
       "lon": -61.75709,
       "day": "14",
       "id": "1375",
-      "title": "St Georges Grenada",
+      "title": "St Georges",
       "country": {
         "flag": {
           "code": "gd",
@@ -598,7 +598,7 @@
       "lon": -68.94329,
       "day": "16",
       "id": "31",
-      "title": "Willemstad Curacao",
+      "title": "Willemstad",
       "country": {
         "flag": {
           "code": "nl",
@@ -615,7 +615,7 @@
       "lon": -75.54345,
       "day": "18",
       "id": "3733",
-      "title": "Cartagena Colombia",
+      "title": "Cartagena",
       "country": {
         "flag": {
           "code": "co",
@@ -1006,7 +1006,7 @@
       "lon": 129.86579,
       "day": "82",
       "id": "537",
-      "title": "Nagasaki City",
+      "title": "Nagasaki",
       "country": {
         "flag": {
           "code": "jp",
@@ -1142,7 +1142,7 @@
       "lon": 55.45773,
       "day": "102",
       "id": "91",
-      "title": "Mahe Island Seychelles",
+      "title": "Mahe Island",
       "country": {
         "flag": {
           "code": "sc",
@@ -1244,7 +1244,7 @@
       "lon": 11.78232,
       "day": "131",
       "id": "81",
-      "title": "Civitavecchia-Rome",
+      "title": "Civitavecchia",
       "country": {
         "flag": {
           "code": "it",
