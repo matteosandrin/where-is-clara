@@ -4,10 +4,9 @@ export interface Position {
   latitude: number;
   longitude: number;
   timestamp: string;
-  navigation_status: number;
   speed_over_ground: number;
   course_over_ground: number;
-  heading: number;
+  is_predicted?: boolean;
 }
 
 export interface Port {

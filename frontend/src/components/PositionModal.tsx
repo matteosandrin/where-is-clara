@@ -1,7 +1,7 @@
 import { Popup } from "react-map-gl/mapbox";
 import type { Position } from "../types/types";
 import { formatTimestamp } from "../lib/utils";
-import { X } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 
 interface PositionModalProps {
   position: Position | null;
@@ -40,6 +40,15 @@ export function PositionModal({
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {position.is_predicted && (
+          <div className="bg-yellow-400/95 backdrop-blur-sm rounded-lg p-2 mb-2 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-yellow-800" />
+            <span className="text-yellow-800 text-sm font-semibold">
+              Predicted position
+            </span>
+          </div>
+        )}
 
         <table className="text-sm">
           <tbody>

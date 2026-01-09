@@ -17,6 +17,7 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const DARK_BLUE = "#193cb8";
 const GREEN = "#7CDD66";
+const YELLOW = "#EAC110";
 
 const ports = cruiseData.ports.map((port) => port as Port);
 
@@ -83,6 +84,28 @@ const lineToNextPortLayerStyle: LayerProps = {
   minzoom: 4,
 };
 
+const predictedArrowLayerStyle: LayerProps = {
+  id: "predicted-arrow",
+  type: "symbol",
+  layout: {
+    "icon-image": "direction-arrow-yellow",
+    "icon-size": 0.8,
+    "icon-rotate": ["get", "course"],
+    "icon-rotation-alignment": "map",
+    "icon-allow-overlap": true,
+    "icon-ignore-placement": true,
+  },
+};
+
+const lineToPredictedPositionLayerStyle: LayerProps = {
+  id: "line-to-predicted-position",
+  type: "line",
+  paint: {
+    "line-color": YELLOW,
+    "line-width": 2,
+  },
+};
+
 // Create an arrow icon as a data URL
 function createArrowIcon(
   fillColor: string,
@@ -118,7 +141,42 @@ function createArrowIcon(
   return img;
 }
 
+function predictPosition(position: Position): Position {
+  const { latitude, longitude, course_over_ground, speed_over_ground } =
+    position;
+  const elapsedMs =
+    new Date().getTime() - new Date(position.timestamp).getTime();
+
+  // Convert elapsed time from milliseconds to hours
+  const elapsedHours = elapsedMs / (1000 * 60 * 60);
+
+  // Distance traveled in nautical miles
+  const distanceNm = speed_over_ground * elapsedHours;
+
+  // Convert course from degrees to radians
+  const courseRad = (course_over_ground * Math.PI) / 180;
+  const latRad = (latitude * Math.PI) / 180;
+
+  // 1 nautical mile = 1 arc minute of latitude = 1/60 degree
+  // Change in latitude (degrees)
+  const deltaLat = (distanceNm * Math.cos(courseRad)) / 60;
+
+  // Change in longitude (degrees) - adjusted for latitude
+  // At higher latitudes, longitude lines converge, so we divide by cos(lat)
+  const deltaLon = (distanceNm * Math.sin(courseRad)) / (60 * Math.cos(latRad));
+
+  return {
+    ...position,
+    id: position.id + "-predicted",
+    timestamp: new Date().toISOString(),
+    latitude: latitude + deltaLat,
+    longitude: longitude + deltaLon,
+    is_predicted: true,
+  } as Position;
+}
+
 export function HomePage() {
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -126,7 +184,9 @@ export function HomePage() {
     null,
   );
   const [selectedPort, setSelectedPort] = useState<Port | null>(null);
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const [predictedPosition, setPredictedPosition] = useState<Position | null>(
+    null,
+  );
 
   const fetchPositions = useCallback(async () => {
     console.log("fetching positions");
@@ -155,6 +215,16 @@ export function HomePage() {
         );
         return dist > MIN_DISTANCE_METERS;
       });
+      // Predict position if last position is older than 5 minutes
+      const timeSinceLastPosition =
+        new Date().getTime() -
+        new Date(filtered[filtered.length - 1].timestamp).getTime();
+      if (timeSinceLastPosition > 1000 * 60 * 5) {
+        const predictedPosition = predictPosition(
+          filtered[filtered.length - 1],
+        );
+        setPredictedPosition(predictedPosition);
+      }
       setPositions(filtered);
     } catch (err) {
       setError(
@@ -227,6 +297,39 @@ export function HomePage() {
     };
   }, [positions]);
 
+  const predictedPointGeojson = useMemo(() => {
+    if (!predictedPosition) return null;
+    return {
+      type: "Feature" as const,
+      properties: {
+        course: predictedPosition.course_over_ground,
+        id: predictedPosition.id,
+      },
+      geometry: {
+        type: "Point" as const,
+        coordinates: [predictedPosition.longitude, predictedPosition.latitude],
+      },
+    };
+  }, [predictedPosition]);
+
+  const lineToPredictedPositionGeojson = useMemo(() => {
+    if (positions.length === 0 || !predictedPosition) return null;
+    return {
+      type: "Feature" as const,
+      properties: {},
+      geometry: {
+        type: "LineString" as const,
+        coordinates: [
+          [
+            positions[positions.length - 1].longitude,
+            positions[positions.length - 1].latitude,
+          ],
+          [predictedPosition.longitude, predictedPosition.latitude],
+        ],
+      },
+    };
+  }, [positions, predictedPosition]);
+
   const lineToNextPortGeojson = useMemo(() => {
     if (
       positions.length === 0 ||
@@ -242,14 +345,18 @@ export function HomePage() {
         type: "LineString" as const,
         coordinates: [
           [
-            positions[positions.length - 1].longitude,
-            positions[positions.length - 1].latitude,
+            predictedPosition
+              ? predictedPosition.longitude
+              : positions[positions.length - 1].longitude,
+            predictedPosition
+              ? predictedPosition.latitude
+              : positions[positions.length - 1].latitude,
           ],
           [nextPort.lon, nextPort.lat],
         ],
       },
     };
-  }, [positions, ports]);
+  }, [positions, predictedPosition, ports]);
 
   const cruisePathGeojson = useMemo(() => {
     const lineString = {
@@ -281,6 +388,7 @@ export function HomePage() {
       };
       loadArrowIcon("direction-arrow", DARK_BLUE, null);
       loadArrowIcon("direction-arrow-green", GREEN, "#ffffff");
+      loadArrowIcon("direction-arrow-yellow", YELLOW, "#ffffff");
     },
     [],
   );
@@ -293,15 +401,15 @@ export function HomePage() {
       }
 
       const clickedFeature = features[0];
-      const matchingPosition = positions.find(
-        (p) => p.id === clickedFeature.properties.id,
+      const matchingPosition = [...positions, predictedPosition].find(
+        (p) => p && p.id === clickedFeature.properties.id,
       );
       if (!matchingPosition) {
         return;
       }
       setSelectedPosition(matchingPosition);
     },
-    [positions],
+    [positions, predictedPosition],
   );
 
   const handleClosePositionModal = useCallback(() => {
@@ -317,13 +425,15 @@ export function HomePage() {
       return { longitude: 0, latitude: 0, zoom: 2 };
     }
     // Center on the most recent position
-    const latest = positions[positions.length - 1];
+    const latest = predictedPosition
+      ? predictedPosition
+      : positions[positions.length - 1];
     return {
       longitude: latest.longitude,
       latitude: latest.latitude,
-      zoom: 8,
+      zoom: 6,
     };
-  }, [positions]);
+  }, [positions, predictedPosition]);
 
   if (loading) {
     return (
@@ -359,7 +469,7 @@ export function HomePage() {
         style={{ width: "100%", height: "100%" }}
         onLoad={onMapLoad}
         onClick={onPointClick}
-        interactiveLayerIds={["arrows", "latest-arrow"]}
+        interactiveLayerIds={["arrows", "latest-arrow", "predicted-arrow"]}
         projection={"mercator"}
       >
         <Source id="cruise-path" type="geojson" data={cruisePathGeojson}>
@@ -368,11 +478,6 @@ export function HomePage() {
         {lineGeojson && (
           <Source id="route" type="geojson" data={lineGeojson}>
             <Layer {...lineLayerStyle} />
-          </Source>
-        )}
-        {pointsGeojson && (
-          <Source id="arrows" type="geojson" data={pointsGeojson}>
-            <Layer {...arrowLayerStyle} />
           </Source>
         )}
         {lineToNextPortGeojson && (
@@ -384,7 +489,7 @@ export function HomePage() {
             <Layer {...lineToNextPortLayerStyle} />
           </Source>
         )}
-        {latestPointGeojson && (
+        {latestPointGeojson && !predictedPosition && (
           <Source id="latest-arrow" type="geojson" data={latestPointGeojson}>
             <Layer {...latestArrowLayerStyle} />
           </Source>
@@ -400,6 +505,29 @@ export function HomePage() {
             <PortPin number={index + 1} />
           </Marker>
         ))}
+        {lineToPredictedPositionGeojson && (
+          <Source
+            id="line-to-predicted-position"
+            type="geojson"
+            data={lineToPredictedPositionGeojson}
+          >
+            <Layer {...lineToPredictedPositionLayerStyle} />
+          </Source>
+        )}
+        {predictedPointGeojson && (
+          <Source
+            id="predicted-arrow"
+            type="geojson"
+            data={predictedPointGeojson}
+          >
+            <Layer {...predictedArrowLayerStyle} />
+          </Source>
+        )}
+        {pointsGeojson && (
+          <Source id="arrows" type="geojson" data={pointsGeojson}>
+            <Layer {...arrowLayerStyle} />
+          </Source>
+        )}
         {selectedPosition && (
           <PositionModal
             position={selectedPosition}
