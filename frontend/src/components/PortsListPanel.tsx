@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import type { Port, Position } from "../types/types";
 import { getClosestPort, getNextPort, isInPort } from "../lib/utils";
 import { getFlagEmoji } from "../lib/utils";
-import { ChevronDown } from "lucide-react";
+import { ChevronUp, X } from "lucide-react";
 
 // Format departure datetime nicely
 function formatDeparture(datetime: string | null): string {
@@ -28,6 +28,7 @@ export function PortsListPanel({
   onPortClick,
 }: PortsListPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const { nextPort, currentPort } = useMemo(() => {
     if (!currentPosition) {
@@ -44,28 +45,22 @@ export function PortsListPanel({
     return { nextPort: next, currentPort: null };
   }, [ports, currentPosition]);
 
-  const desktopScrollRef = useRef<HTMLDivElement>(null);
-  const mobileScrollRef = useRef<HTMLDivElement>(null);
-
   const highlightedPortId = currentPort?.id ?? nextPort?.id ?? null;
 
   useEffect(() => {
-    if (!highlightedPortId) return;
+    if (!highlightedPortId || !isExpanded) return;
 
-    const scrollToHighlighted = (container: HTMLDivElement | null) => {
-      if (!container) return;
-      const element = container.querySelector(
-        `[data-port-id="${highlightedPortId}"]`,
-      );
-      element?.scrollIntoView({ behavior: "smooth", block: "start" });
-    };
+    const container = scrollRef.current;
+    if (!container) return;
 
-    scrollToHighlighted(desktopScrollRef.current);
-    scrollToHighlighted(mobileScrollRef.current);
+    const element = container.querySelector(
+      `[data-port-id="${highlightedPortId}"]`
+    );
+    element?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [highlightedPortId, isExpanded]);
 
   const getPortStatus = (
-    port: Port,
+    port: Port
   ): "past" | "current" | "next" | "future" => {
     if (currentPort && port.id === currentPort.id) return "current";
     if (nextPort && port.id === nextPort.id) return "next";
@@ -81,51 +76,39 @@ export function PortsListPanel({
 
   const toggleExpanded = () => setIsExpanded(!isExpanded);
 
-  // Desktop version (always visible)
-  const desktopPanel = (
-    <div className="hidden md:block absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-xl shadow-2xl w-72 max-h-[60vh] max-w-[240px] overflow-hidden">
-      <div className="p-4 border-b border-slate-700/50">
-        <h3 className="text-slate-100 font-semibold text-sm tracking-wide">
-          Cruise Itinerary
-        </h3>
-        <p className="text-slate-400 text-xs mt-1">{ports.length} ports</p>
-      </div>
-      <div
-        ref={desktopScrollRef}
-        className="overflow-y-auto max-h-[calc(60vh-60px)]"
-      >
-        {ports.map((port, index) => {
-          const status = getPortStatus(port);
-          return (
-            <PortRow
-              key={port.id}
-              port={port}
-              status={status}
-              number={index + 1}
-              onClick={() => onPortClick?.(port)}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
+  const handlePortClick = (port: Port) => {
+    onPortClick?.(port);
+    // Collapse on mobile after selecting a port
+    if (window.innerWidth < 768) {
+      setIsExpanded(false);
+    }
+  };
 
-  // Mobile version (expandable)
-  const mobilePanel = (
-    <div className="md:hidden absolute bottom-2 left-2 z-10">
+  useEffect(() => {
+    if (window.innerWidth > 768) {
+      setIsExpanded(true);
+    } else {
+      setIsExpanded(false);
+    }
+  }, []);
+
+  return (
+    <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 z-10">
       {!isExpanded ? (
+        // Collapsed state - compact button
         <button
           onClick={toggleExpanded}
-          className="bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-xl py-2 px-2 shadow-2xl flex items-center gap-2"
+          className="bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-xl py-2 px-3 shadow-2xl flex items-center gap-2 hover:bg-slate-800/90 transition-colors"
         >
           <span className="text-slate-200 text-sm">
             <span className="font-semibold">{ports.length}</span> ports
           </span>
-          <ChevronDown className="w-4 h-4 text-slate-400" />
+          <ChevronUp className="w-4 h-4 text-slate-400" />
         </button>
       ) : (
-        <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 rounded-xl shadow-2xl w-[calc(100vw-1rem)] max-h-[70vh] overflow-clip">
-          <div className="p-4 border-b border-slate-700/50 flex items-center justify-between">
+        // Expanded state - full panel
+        <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 rounded-xl shadow-2xl w-[calc(100vw-1rem)] md:w-60 max-h-[70vh] md:max-h-[60vh] overflow-hidden">
+          <div className="p-3 md:p-4 border-b border-slate-700/50 flex items-center justify-between">
             <div>
               <h3 className="text-slate-100 font-semibold text-sm tracking-wide">
                 Cruise Itinerary
@@ -137,25 +120,14 @@ export function PortsListPanel({
             <button
               onClick={toggleExpanded}
               className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors"
+              aria-label="Collapse panel"
             >
-              <svg
-                className="w-5 h-5 text-slate-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <X className="w-5 h-5 text-slate-400" />
             </button>
           </div>
           <div
-            ref={mobileScrollRef}
-            className="overflow-y-auto max-h-[calc(70vh-60px)]"
+            ref={scrollRef}
+            className="overflow-y-auto max-h-[calc(70vh-60px)] md:max-h-[calc(60vh-60px)] scrollbar-dark"
           >
             {ports.map((port, index) => {
               const status = getPortStatus(port);
@@ -165,10 +137,7 @@ export function PortsListPanel({
                   port={port}
                   status={status}
                   number={index + 1}
-                  onClick={() => {
-                    onPortClick?.(port);
-                    setIsExpanded(false);
-                  }}
+                  onClick={() => handlePortClick(port)}
                 />
               );
             })}
@@ -176,13 +145,6 @@ export function PortsListPanel({
         </div>
       )}
     </div>
-  );
-
-  return (
-    <>
-      {desktopPanel}
-      {mobilePanel}
-    </>
   );
 }
 
