@@ -1,24 +1,16 @@
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import Map, { Source, Layer, Marker } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
 import { PortPin } from "./PortPin";
 import "mapbox-gl/dist/mapbox-gl.css";
-import distance from "@turf/distance";
-import { positionApi, settingsApi } from "../lib/client";
-import type { Port, Position, Settings } from "../types/types";
+import type { Port, Position } from "../types/types";
 import { PositionModal } from "./PositionModal";
 import { CurrentPositionPanel } from "./CurrentPositionPanel";
 import { PortsListPanel } from "./PortsListPanel";
 import cruiseData from "../data/cruise.json";
 import splitGeoJSON from "geojson-antimeridian-cut";
 import { PortModal } from "./PortModal";
-import {
-  getNextPort,
-  isInPort,
-  predictPosition,
-  createArrowIcon,
-  shouldPredictPosition,
-} from "../lib/utils";
+import { getNextPort, isInPort, createArrowIcon } from "../lib/utils";
 import { DARK_BLUE, GREEN, YELLOW } from "../lib/colors";
 import {
   cruisePathLayerStyle,
@@ -30,6 +22,7 @@ import {
   arrowLayerStyle,
 } from "../lib/layer-styles";
 import { useSettings } from "../hooks/settings";
+import { usePositions } from "../hooks/usePositions";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -38,68 +31,15 @@ const ports = cruiseData.ports.map((port) => port as Port);
 export function HomePage() {
   const mapRef = useRef<MapRef>(null);
   const { settings } = useSettings();
+  const { positions, predictedPosition, loading, error } = usePositions(
+    settings,
+    ports,
+  );
 
-  const [positions, setPositions] = useState<Position[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(
     null,
   );
   const [selectedPort, setSelectedPort] = useState<Port | null>(null);
-  const [predictedPosition, setPredictedPosition] = useState<Position | null>(
-    null,
-  );
-
-  const fetchPositions = useCallback(async () => {
-    console.log("fetching positions");
-    try {
-      const fromTs = settings?.cruise_start_date || null;
-      const data = await positionApi.getRange(
-        settings?.vessel_mmsi || null,
-        fromTs,
-        null,
-      );
-      // Sort by timestamp ascending for proper line drawing
-      const sorted = data.sort(
-        (a, b) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-      );
-      // Only keep points that are at least 25 meters apart
-      const MIN_DISTANCE_METERS = 25;
-      const filtered = sorted.filter((p, i, arr) => {
-        if (i === 0) return true;
-        if (i === arr.length - 1) return true;
-        const prev = arr[i - 1];
-        const dist = distance(
-          [prev.longitude, prev.latitude],
-          [p.longitude, p.latitude],
-          { units: "meters" },
-        );
-        return dist > MIN_DISTANCE_METERS;
-      });
-      // Predict position if last position is older than 5 minutes
-      const lastPosition = filtered[filtered.length - 1];
-      if (shouldPredictPosition(ports, lastPosition)) {
-        const predictedPosition = predictPosition(lastPosition);
-        setPredictedPosition(predictedPosition);
-      }
-      setPositions(filtered);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to fetch positions",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [settings]);
-
-  useEffect(() => {
-    if (!settings) return;
-    fetchPositions();
-    // Fetch positions every 60 seconds
-    const interval = setInterval(() => fetchPositions(), 1000 * 60);
-    return () => clearInterval(interval);
-  }, [settings, fetchPositions]);
 
   const lineGeojson = useMemo(() => {
     if (positions.length === 0) return null;
