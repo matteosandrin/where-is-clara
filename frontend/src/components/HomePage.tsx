@@ -17,6 +17,7 @@ import {
   isInPort,
   predictPosition,
   createArrowIcon,
+  shouldPredictPosition,
 } from "../lib/utils";
 import { DARK_BLUE, GREEN, YELLOW } from "../lib/colors";
 import {
@@ -75,13 +76,9 @@ export function HomePage() {
         return dist > MIN_DISTANCE_METERS;
       });
       // Predict position if last position is older than 5 minutes
-      const timeSinceLastPosition =
-        new Date().getTime() -
-        new Date(filtered[filtered.length - 1].timestamp).getTime();
-      if (timeSinceLastPosition > 1000 * 60 * 5) {
-        const predictedPosition = predictPosition(
-          filtered[filtered.length - 1],
-        );
+      const lastPosition = filtered[filtered.length - 1];
+      if (shouldPredictPosition(ports, lastPosition)) {
+        const predictedPosition = predictPosition(lastPosition);
         setPredictedPosition(predictedPosition);
       }
       setPositions(filtered);
@@ -419,6 +416,7 @@ export function HomePage() {
           <CurrentPositionPanel
             position={positions[positions.length - 1]}
             title={settings?.vessel_name || ""}
+            isPredicted={predictedPosition !== null}
           />
 
           <PortsListPanel

@@ -63,6 +63,25 @@ export function getNextPort(
   return nextPorts[0];
 }
 
+export function getClosestPort(
+  ports: Port[],
+  currentPosition: Position,
+): Port | null {
+  const closestPort = ports
+    .map((port) => {
+      return {
+        ...port,
+        distance: distance(
+          [currentPosition.longitude, currentPosition.latitude],
+          [port.lon, port.lat],
+          { units: "meters" },
+        ),
+      };
+    })
+    .sort((a, b) => a.distance - b.distance)[0];
+  return closestPort;
+}
+
 export function isInPort(ports: Port[], currentPosition: Position): boolean {
   if (ports.length === 0) {
     return false;
@@ -114,6 +133,17 @@ export function predictPosition(position: Position): Position {
     longitude: longitude + deltaLon,
     is_predicted: true,
   } as Position;
+}
+
+export function shouldPredictPosition(
+  ports: Port[],
+  lastPosition: Position,
+): boolean {
+  const timeSinceLastPosition =
+    new Date().getTime() - new Date(lastPosition.timestamp).getTime();
+  return (
+    !isInPort(ports, lastPosition) && timeSinceLastPosition > 1000 * 60 * 5
+  );
 }
 
 export function getFlagEmoji(countryCode: string): string {

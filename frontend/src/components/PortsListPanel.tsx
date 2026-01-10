@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import type { Port, Position } from "../types/types";
-import { getNextPort, isInPort } from "../lib/utils";
+import { getClosestPort, getNextPort, isInPort } from "../lib/utils";
 import { getFlagEmoji } from "../lib/utils";
 import { ChevronDown } from "lucide-react";
 
@@ -34,23 +34,14 @@ export function PortsListPanel({
       return { nextPort: ports[0] || null, currentPort: null };
     }
     const inPort = isInPort(ports, currentPosition);
-    const next = getNextPort(ports, currentPosition);
-
-    // If we're in a port, that port is the "current" port
-    // Find it by checking which port we're closest to
-    let current: Port | null = null;
-    if (inPort && next) {
-      // The current port is the one just before the next port
-      const nextIndex = ports.findIndex((p) => p.id === next.id);
-      if (nextIndex > 0) {
-        current = ports[nextIndex - 1];
-      }
-    } else if (inPort && !next) {
-      // We're at the last port
-      current = ports[ports.length - 1];
+    if (inPort) {
+      return {
+        nextPort: null,
+        currentPort: getClosestPort(ports, currentPosition) || null,
+      };
     }
-
-    return { nextPort: next, currentPort: current };
+    const next = getNextPort(ports, currentPosition);
+    return { nextPort: next, currentPort: null };
   }, [ports, currentPosition]);
 
   const getPortStatus = (
