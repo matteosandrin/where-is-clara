@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import type { Port, Position } from "../types/types";
 import { getClosestPort, getNextPort, isInPort } from "../lib/utils";
 import { getFlagEmoji } from "../lib/utils";
@@ -44,6 +44,26 @@ export function PortsListPanel({
     return { nextPort: next, currentPort: null };
   }, [ports, currentPosition]);
 
+  const desktopScrollRef = useRef<HTMLDivElement>(null);
+  const mobileScrollRef = useRef<HTMLDivElement>(null);
+
+  const highlightedPortId = currentPort?.id ?? nextPort?.id ?? null;
+
+  useEffect(() => {
+    if (!highlightedPortId) return;
+
+    const scrollToHighlighted = (container: HTMLDivElement | null) => {
+      if (!container) return;
+      const element = container.querySelector(
+        `[data-port-id="${highlightedPortId}"]`,
+      );
+      element?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
+    scrollToHighlighted(desktopScrollRef.current);
+    scrollToHighlighted(mobileScrollRef.current);
+  }, [highlightedPortId, isExpanded]);
+
   const getPortStatus = (
     port: Port,
   ): "past" | "current" | "next" | "future" => {
@@ -70,7 +90,10 @@ export function PortsListPanel({
         </h3>
         <p className="text-slate-400 text-xs mt-1">{ports.length} ports</p>
       </div>
-      <div className="overflow-y-auto max-h-[calc(60vh-60px)]">
+      <div
+        ref={desktopScrollRef}
+        className="overflow-y-auto max-h-[calc(60vh-60px)]"
+      >
         {ports.map((port, index) => {
           const status = getPortStatus(port);
           return (
@@ -101,7 +124,7 @@ export function PortsListPanel({
           <ChevronDown className="w-4 h-4 text-slate-400" />
         </button>
       ) : (
-        <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 rounded-xl shadow-2xl w-[calc(100vw-1rem)] max-h-[70vh] overflow-hidden">
+        <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 rounded-xl shadow-2xl w-[calc(100vw-1rem)] max-h-[70vh] overflow-clip">
           <div className="p-4 border-b border-slate-700/50 flex items-center justify-between">
             <div>
               <h3 className="text-slate-100 font-semibold text-sm tracking-wide">
@@ -130,7 +153,10 @@ export function PortsListPanel({
               </svg>
             </button>
           </div>
-          <div className="overflow-y-auto max-h-[calc(70vh-60px)]">
+          <div
+            ref={mobileScrollRef}
+            className="overflow-y-auto max-h-[calc(70vh-60px)]"
+          >
             {ports.map((port, index) => {
               const status = getPortStatus(port);
               return (
@@ -173,6 +199,7 @@ function PortRow({ port, status, number, onClick }: PortRowProps) {
 
   return (
     <button
+      data-port-id={port.id}
       onClick={onClick}
       className={`w-full text-left px-3 py-2.5 border-b border-slate-700/30 hover:bg-slate-700/40 transition-colors flex items-start gap-3 ${
         isPastOrDimmed ? "opacity-50" : ""
