@@ -35,7 +35,8 @@ body {
 /* Custom scrollbar for dark panels */
 .scrollbar-dark {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--color-slate-600) 50%, transparent) transparent;
+  scrollbar-color: color-mix(in srgb, var(--color-slate-600) 50%, transparent)
+    transparent;
 }
 
 .scrollbar-dark::-webkit-scrollbar {

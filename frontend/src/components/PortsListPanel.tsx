@@ -4,7 +4,6 @@ import { getClosestPort, getNextPort, isInPort } from "../lib/utils";
 import { getFlagEmoji, formatDateInTimezone } from "../lib/utils";
 import { ChevronUp, X } from "lucide-react";
 
-
 interface PortsListPanelProps {
   ports: Port[];
   currentPosition: Position | null;
@@ -43,9 +42,9 @@ export function PortsListPanel({
     if (!container) return;
 
     const element = container.querySelector(
-      `[data-port-id="${highlightedPortId}"]`
+      `[data-port-id="${highlightedPortId}"]`,
     ) as HTMLElement | null;
-    
+
     if (element) {
       const scrollTop = element.offsetTop - container.offsetTop;
       container.scrollTo({ top: scrollTop, behavior: "smooth" });
@@ -53,7 +52,7 @@ export function PortsListPanel({
   }, [highlightedPortId, isExpanded]);
 
   const getPortStatus = (
-    port: Port
+    port: Port,
   ): "past" | "current" | "next" | "future" => {
     if (currentPort && port.id === currentPort.id) return "current";
     if (nextPort && port.id === nextPort.id) return "next";
@@ -183,7 +182,9 @@ function PortRow({ port, status, number, onClick }: PortRowProps) {
         </div>
         <div className="mt-0.5">
           <span className="text-xs text-slate-500">
-            {port.dep_datetime ? formatDateInTimezone(port.dep_datetime, port.timezone) : "End of cruise"}
+            {port.dep_datetime
+              ? formatDateInTimezone(port.dep_datetime, port.timezone)
+              : "End of cruise"}
           </span>
         </div>
       </div>
