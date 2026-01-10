@@ -102,8 +102,8 @@ export function HomePage() {
   useEffect(() => {
     if (!settings) return;
     fetchPositions();
-    // Fetch positions every 5 minutes
-    const interval = setInterval(() => fetchPositions(), 1000 * 60 * 5);
+    // Fetch positions every 60 seconds
+    const interval = setInterval(() => fetchPositions(), 1000 * 60);
     return () => clearInterval(interval);
   }, [settings, fetchPositions]);
 
