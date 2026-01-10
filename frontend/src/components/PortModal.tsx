@@ -25,7 +25,7 @@ export function PortModal({ port, isOpen, onClose }: PortModalProps) {
       className="port-popup"
       offset={[0, -30]}
     >
-      <div className="bg-dark-frosty rounded-lg p-4">
+      <div className="panel">
         <div className="flex items-center mb-3 gap-2 justify-between">
           <h2 className="text-slate-200 text-lg font-semibold">
             <span className="text-xl -mb-1">
@@ -34,10 +34,11 @@ export function PortModal({ port, isOpen, onClose }: PortModalProps) {
             <span className="ml-2">{port.title}</span>
           </h2>
           <button
-            className="text-slate-400 hover:text-slate-200 text-xl w-4 h-4"
             onClick={onClose}
+            className="p-2 hover:bg-slate-700/50 rounded-md transition-colors"
+            aria-label="Close panel"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 text-slate-400" />
           </button>
         </div>
         <table className="text-sm">

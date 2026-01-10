@@ -30,14 +30,15 @@ export function PositionModal({
       closeOnClick={false}
       className="position-popup"
     >
-      <div className="bg-dark-frosty rounded-lg p-4">
+      <div className="panel">
         <div className="flex items-center justify-between mb-3 gap-2">
           <h2 className="text-slate-200 text-lg font-semibold">{title}</h2>
           <button
-            className="text-slate-400 hover:text-slate-200 text-xl w-4 h-4"
             onClick={onClose}
+            className="p-2 hover:bg-slate-700/50 rounded-md transition-colors"
+            aria-label="Close panel"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 text-slate-400" />
           </button>
         </div>
 

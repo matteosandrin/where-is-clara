@@ -44,7 +44,7 @@ export function CurrentPositionPanel({
   }, []);
 
   return (
-    <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-dark-frosty border border-slate-700/50 rounded-xl p-4 shadow-2xl min-w-[calc(100vw-1rem)] md:min-w-[240px]">
+    <div className="panel absolute top-2 left-2 md:top-4 md:left-4 min-w-[calc(100vw-1rem)] md:min-w-[240px]">
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-700/50">
         <div
           className={`w-3 h-3 rounded-full ${!isPredicted ? "animate-pulse" : ""}`}

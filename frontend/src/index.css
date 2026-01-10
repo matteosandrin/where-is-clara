@@ -8,8 +8,10 @@ body {
   @apply p-0 m-0;
 }
 
-.bg-dark-frosty {
+.panel {
   @apply bg-slate-900/80 backdrop-blur-sm;
+  @apply border border-slate-700/50;
+  @apply rounded-xl p-4 shadow-2xl;
 }
 
 /* Style Mapbox Popup */
@@ -20,7 +22,7 @@ body {
 
 .position-popup .mapboxgl-popup-tip,
 .port-popup .mapboxgl-popup-tip {
-  @apply !border-t-slate-900/95;
+  @apply !border-t-slate-900/80;
 }
 
 .position-popup .mapboxgl-popup-close-button,

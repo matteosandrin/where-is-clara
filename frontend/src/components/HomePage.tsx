@@ -423,7 +423,7 @@ export function HomePage() {
           />
 
           {/* Position Count Badge */}
-          <div className="absolute bottom-2 right-2 md:bottom-4 md:right-4 bg-dark-frosty border border-slate-700/50 rounded-xl py-2 px-4 shadow-2xl">
+          <div className="panel absolute bottom-2 right-2 md:bottom-4 md:right-4 py-2!">
             <p className="text-slate-100 text-sm">
               <span className="font-semibold">{positions.length}</span>{" "}
               positions
