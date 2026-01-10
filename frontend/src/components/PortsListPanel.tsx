@@ -55,8 +55,12 @@ export function PortsListPanel({
 
     const element = container.querySelector(
       `[data-port-id="${highlightedPortId}"]`
-    );
-    element?.scrollIntoView({ behavior: "smooth", block: "start" });
+    ) as HTMLElement | null;
+    
+    if (element) {
+      const scrollTop = element.offsetTop - container.offsetTop;
+      container.scrollTo({ top: scrollTop, behavior: "smooth" });
+    }
   }, [highlightedPortId, isExpanded]);
 
   const getPortStatus = (
