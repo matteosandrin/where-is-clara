@@ -358,11 +358,6 @@ export function HomePage() {
             <Layer {...lineToNextPortLayerStyle} />
           </Source>
         )}
-        {latestPointGeojson && !predictedPosition && (
-          <Source id="latest-arrow" type="geojson" data={latestPointGeojson}>
-            <Layer {...latestArrowLayerStyle} />
-          </Source>
-        )}
         {ports.map((port, index) => (
           <Marker
             key={port.id}
@@ -383,6 +378,16 @@ export function HomePage() {
             <Layer {...lineToPredictedPositionLayerStyle} />
           </Source>
         )}
+        {pointsGeojson && (
+          <Source id="arrows" type="geojson" data={pointsGeojson}>
+            <Layer {...arrowLayerStyle} />
+          </Source>
+        )}
+        {latestPointGeojson && !predictedPosition && (
+          <Source id="latest-arrow" type="geojson" data={latestPointGeojson}>
+            <Layer {...latestArrowLayerStyle} />
+          </Source>
+        )}
         {predictedPointGeojson && (
           <Source
             id="predicted-arrow"
@@ -390,11 +395,6 @@ export function HomePage() {
             data={predictedPointGeojson}
           >
             <Layer {...predictedArrowLayerStyle} />
-          </Source>
-        )}
-        {pointsGeojson && (
-          <Source id="arrows" type="geojson" data={pointsGeojson}>
-            <Layer {...arrowLayerStyle} />
           </Source>
         )}
         {selectedPosition && (
