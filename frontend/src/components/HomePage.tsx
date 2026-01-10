@@ -304,7 +304,7 @@ export function HomePage() {
       <div className="fixed inset-0 flex items-center justify-center bg-slate-900">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-sky-400 border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-300 text-lg tracking-wide">
+          <p className="text-slate-100 text-lg tracking-wide">
             Loading positions...
           </p>
         </div>
@@ -426,8 +426,8 @@ export function HomePage() {
           />
 
           {/* Position Count Badge */}
-          <div className="absolute bottom-2 right-2 md:bottom-4 md:right-4 bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-xl py-2 px-4 shadow-2xl">
-            <p className="text-slate-300 text-sm">
+          <div className="absolute bottom-2 right-2 md:bottom-4 md:right-4 bg-dark-frosty border border-slate-700/50 rounded-xl py-2 px-4 shadow-2xl">
+            <p className="text-slate-100 text-sm">
               <span className="font-semibold">{positions.length}</span>{" "}
               positions
             </p>

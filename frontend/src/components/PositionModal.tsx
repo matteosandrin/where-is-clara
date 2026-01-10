@@ -30,7 +30,7 @@ export function PositionModal({
       closeOnClick={false}
       className="position-popup"
     >
-      <div className="bg-slate-900/95 backdrop-blur-sm rounded-lg p-4">
+      <div className="bg-dark-frosty rounded-lg p-4">
         <div className="flex items-center justify-between mb-3 gap-2">
           <h2 className="text-slate-200 text-lg font-semibold">{title}</h2>
           <button

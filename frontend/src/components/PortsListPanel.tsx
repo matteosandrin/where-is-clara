@@ -91,7 +91,7 @@ export function PortsListPanel({
         // Collapsed state - compact button
         <button
           onClick={toggleExpanded}
-          className="bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-xl py-2 px-3 shadow-2xl flex items-center gap-2 hover:bg-slate-800/90 transition-colors"
+          className="bg-dark-frosty border border-slate-700/50 rounded-xl py-2 px-3 shadow-2xl flex items-center gap-2 hover:bg-slate-800/90 transition-colors"
         >
           <span className="text-slate-200 text-sm">
             <span className="font-semibold">{ports.length}</span> ports
@@ -100,7 +100,7 @@ export function PortsListPanel({
         </button>
       ) : (
         // Expanded state - full panel
-        <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 rounded-xl shadow-2xl w-[calc(100vw-1rem)] md:w-60 max-h-[70vh] md:max-h-[60vh] overflow-hidden">
+        <div className="bg-dark-frosty border border-slate-700/50 rounded-xl shadow-2xl w-[calc(100vw-1rem)] md:w-60 max-h-[70vh] md:max-h-[60vh] overflow-hidden">
           <div className="p-3 md:p-4 border-b border-slate-700/50 flex items-center justify-between">
             <div>
               <h3 className="text-slate-100 font-semibold text-sm tracking-wide">

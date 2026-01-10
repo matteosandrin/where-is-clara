@@ -25,7 +25,7 @@ export function PortModal({ port, isOpen, onClose }: PortModalProps) {
       className="port-popup"
       offset={[0, -30]}
     >
-      <div className="bg-slate-900/95 backdrop-blur-sm rounded-lg p-4">
+      <div className="bg-dark-frosty rounded-lg p-4">
         <div className="flex items-center mb-3 gap-2 justify-between">
           <h2 className="text-slate-200 text-lg font-semibold">
             <span className="text-xl -mb-1">
@@ -57,8 +57,8 @@ export function PortModal({ port, isOpen, onClose }: PortModalProps) {
               </tr>
             )}
             <tr>
-              <td className="text-slate-400 pr-4 pb-2">Timezone</td>
-              <td className="font-mono text-xs text-slate-200 pb-2 w-fit">
+              <td className="text-slate-400 pr-4">Timezone</td>
+              <td className="font-mono text-xs text-slate-200 w-fit">
                 {port.timezone}
               </td>
             </tr>
