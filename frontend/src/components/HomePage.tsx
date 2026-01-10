@@ -237,9 +237,6 @@ export function HomePage() {
               map.addImage(iconName, arrowImg);
             }
           };
-          if (arrowImg.complete) {
-            map.addImage(iconName, arrowImg);
-          }
         }
       };
       loadArrowIcon("direction-arrow", DARK_BLUE, null);
