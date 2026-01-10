@@ -1,20 +1,9 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import type { Port, Position } from "../types/types";
 import { getClosestPort, getNextPort, isInPort } from "../lib/utils";
-import { getFlagEmoji } from "../lib/utils";
+import { getFlagEmoji, formatDateInTimezone } from "../lib/utils";
 import { ChevronUp, X } from "lucide-react";
 
-// Format departure datetime nicely
-function formatDeparture(datetime: string | null): string {
-  if (!datetime) return "End of cruise";
-  const date = new Date(datetime);
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
 
 interface PortsListPanelProps {
   ports: Port[];
@@ -194,7 +183,7 @@ function PortRow({ port, status, number, onClick }: PortRowProps) {
         </div>
         <div className="mt-0.5">
           <span className="text-xs text-slate-500">
-            {formatDeparture(port.dep_datetime)}
+            {port.dep_datetime ? formatDateInTimezone(port.dep_datetime, port.timezone) : "End of cruise"}
           </span>
         </div>
       </div>

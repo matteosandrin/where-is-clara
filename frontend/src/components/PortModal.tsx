@@ -1,6 +1,6 @@
 import { Popup } from "react-map-gl/mapbox";
 import type { Port } from "../types/types";
-import { formatTimestamp } from "../lib/utils";
+import { formatDateInTimezone } from "../lib/utils";
 import { X } from "lucide-react";
 import { getFlagEmoji } from "../lib/utils";
 
@@ -48,12 +48,14 @@ export function PortModal({ port, isOpen, onClose }: PortModalProps) {
                 {port.day}
               </td>
             </tr>
-            <tr>
-              <td className="text-slate-400 pr-4 pb-2">Departure</td>
-              <td className="font-mono text-xs text-slate-200 pb-2 w-fit">
-                {formatTimestamp(port.dep_datetime)}
-              </td>
-            </tr>
+            {port.dep_datetime && (
+              <tr>
+                <td className="text-slate-400 pr-4 pb-2">Departure</td>
+                <td className="font-mono text-xs text-slate-200 pb-2 w-fit">
+                  {formatDateInTimezone(port.dep_datetime, port.timezone)}
+                </td>
+              </tr>
+            )}
             <tr>
               <td className="text-slate-400 pr-4 pb-2">Timezone</td>
               <td className="font-mono text-xs text-slate-200 pb-2 w-fit">

@@ -153,3 +153,20 @@ export function getFlagEmoji(countryCode: string): string {
     .map((char) => 127397 + char.charCodeAt(0));
   return String.fromCodePoint(...codePoints);
 }
+
+export function formatDateInTimezone(
+  isoDateString: string,
+  timezone?: string,
+): string {
+  const date = new Date(isoDateString);
+  const clientTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return date.toLocaleString("en-GB", {
+    timeZone: timezone || clientTimeZone,
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
+}

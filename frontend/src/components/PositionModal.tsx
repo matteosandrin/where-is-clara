@@ -1,6 +1,6 @@
 import { Popup } from "react-map-gl/mapbox";
 import type { Position } from "../types/types";
-import { formatTimestamp } from "../lib/utils";
+import { formatDateInTimezone } from "../lib/utils";
 import { AlertTriangle, X } from "lucide-react";
 
 interface PositionModalProps {
@@ -55,7 +55,7 @@ export function PositionModal({
             <tr>
               <td className="text-slate-400 pr-4 pb-2">Time</td>
               <td className="font-mono text-xs text-slate-200 pb-2 w-fit">
-                {formatTimestamp(position.timestamp)}
+                {formatDateInTimezone(position.timestamp)}
               </td>
             </tr>
             <tr>
