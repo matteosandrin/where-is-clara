@@ -29,6 +29,7 @@ import {
   predictedArrowLayerStyle,
   arrowLayerStyle,
 } from "../lib/layer-styles";
+import { useSettings } from "../hooks/settings";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -36,7 +37,8 @@ const ports = cruiseData.ports.map((port) => port as Port);
 
 export function HomePage() {
   const mapRef = useRef<MapRef>(null);
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const { settings } = useSettings();
+
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,14 +92,6 @@ export function HomePage() {
       setLoading(false);
     }
   }, [settings]);
-
-  useEffect(() => {
-    async function fetchSettings() {
-      const data = await settingsApi.getSettings();
-      setSettings(data);
-    }
-    fetchSettings();
-  }, []);
 
   useEffect(() => {
     if (!settings) return;
