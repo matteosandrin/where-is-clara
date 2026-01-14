@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import Map, { Source, Layer, Marker } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
 import { PortPin } from "./PortPin";
@@ -23,6 +23,7 @@ import {
 } from "../lib/layer-styles";
 import { useSettings } from "../hooks/settings";
 import { usePositions } from "../hooks/usePositions";
+import mapboxgl from "mapbox-gl";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -229,6 +230,24 @@ export function HomePage() {
       zoom: 6,
     };
   }, [positions, predictedPosition]);
+
+  useEffect(() => {
+    if (!positions || positions.length === 0) return;
+    console.log(positions);
+    const latest = predictedPosition
+      ? predictedPosition
+      : positions[positions.length - 1];
+    const nextPort = getNextPort(ports, latest);
+    if (!isInPort(ports, latest) && nextPort) {
+      const bounds = new mapboxgl.LngLatBounds();
+      bounds.extend([latest.longitude, latest.latitude]);
+      bounds.extend([nextPort.lon, nextPort.lat]);
+      const isMobile = window.innerWidth <= 768;
+      setTimeout(() => {
+        mapRef.current?.fitBounds(bounds, { padding: isMobile ? 75 : 300 });
+      }, 100);
+    }
+  }, [positions]);
 
   if (loading) {
     return (
