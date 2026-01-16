@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models import Position
+from app.services.position_cache_service import get_position_cache_service
 from ..config import get_settings
 
 logging.basicConfig(level=logging.INFO)
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 # VesselFinder API constants
+MMSI = settings.vessel_mmsi
 VESSELFINDER_DOMAIN = "https://www.vesselfinder.com"
 VESSELFINDER_SERVICE = "/api/pub"
 COORD_FACTOR = 600000
@@ -95,17 +97,17 @@ def fetch_vessel_track(mmsi: str) -> list[dict[str, Any]]:
 class PositionService:
     """Service that polls VesselFinder API and stores new positions in DB."""
 
-    def __init__(self, mmsi: str):
-        self.mmsi = mmsi
+    def __init__(self):
         self._poll_task: asyncio.Task | None = None
         self._running = False
+        self._position_cache_service = get_position_cache_service()
 
     async def start(self):
         if self._running:
             return
         self._running = True
         self._poll_task = asyncio.create_task(self._poll_loop())
-        logger.info(f"PositionService started for MMSI {self.mmsi}")
+        logger.info(f"PositionService started for MMSI {MMSI}")
 
     async def stop(self):
         self._running = False
@@ -115,14 +117,14 @@ class PositionService:
                 await self._poll_task
             except asyncio.CancelledError:
                 pass
-        logger.info(f"PositionService stopped for MMSI {self.mmsi}")
+        logger.info(f"PositionService stopped for MMSI {MMSI}")
 
     async def _poll_loop(self):
         while self._running:
             try:
                 await self._poll_and_store()
             except Exception as e:
-                logger.error(f"Error polling VesselFinder: {e}")
+                logger.error(f"Error polling VesselFinder for MMSI {MMSI}: {e}")
 
             await asyncio.sleep(POLL_INTERVAL_SECONDS + random.random() * 60)
 
@@ -130,10 +132,10 @@ class PositionService:
         """Fetch track from VesselFinder and store new positions."""
         # Run the blocking HTTP request in a thread pool
         loop = asyncio.get_event_loop()
-        track_points = await loop.run_in_executor(None, fetch_vessel_track, self.mmsi)
+        track_points = await loop.run_in_executor(None, fetch_vessel_track, MMSI)
 
         if not track_points:
-            logger.debug(f"No track points returned for MMSI {self.mmsi}")
+            logger.debug(f"No track points returned for MMSI {MMSI}")
             return
 
         # Get the last stored position timestamp from DB
@@ -141,8 +143,8 @@ class PositionService:
         try:
             last_position = (
                 db.query(Position)
-                .filter(Position.mmsi == self.mmsi)
-                .order_by(Position.timestamp.desc())
+                .filter(Position.mmsi == MMSI)
+                .order_by(Position.timestamp.asc())
                 .first()
             )
             last_timestamp = last_position.timestamp if last_position else None
@@ -155,14 +157,14 @@ class PositionService:
             ]
 
             if not new_points:
-                logger.debug(f"No new positions to store for MMSI {self.mmsi}")
+                logger.debug(f"No new positions to store for MMSI {MMSI}")
                 return
 
             new_points.sort(key=lambda p: p["timestamp"])
 
             for point in new_points:
                 position = Position(
-                    mmsi=self.mmsi,
+                    mmsi=MMSI,
                     latitude=point["latitude"],
                     longitude=point["longitude"],
                     timestamp=point["timestamp"],
@@ -172,9 +174,9 @@ class PositionService:
                 db.add(position)
 
             db.commit()
-            logger.info(
-                f"Stored {len(new_points)} new position(s) for MMSI {self.mmsi}"
-            )
+            logger.info(f"Stored {len(new_points)} new position(s) for MMSI {MMSI}")
+
+            await self._position_cache_service.refresh_cache()
 
         finally:
             db.close()
@@ -187,5 +189,5 @@ def get_position_service() -> PositionService:
     """Get the singleton PositionService instance."""
     global _position_service
     if _position_service is None:
-        _position_service = PositionService(settings.vessel_mmsi)
+        _position_service = PositionService()
     return _position_service

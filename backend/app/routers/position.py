@@ -1,16 +1,23 @@
 from datetime import datetime
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Position
 from app.config import get_settings
+from app.services.position_cache_service import get_position_cache_service
 
 settings = get_settings()
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/position",
     tags=["position"],
 )
+
+position_cache_service = get_position_cache_service()
 
 
 @router.get(f"/latest")
@@ -20,6 +27,11 @@ async def get_latest_position_default_vessel(db: Session = Depends(get_db)):
 
 @router.get("/latest/{mmsi}")
 async def get_latest_position(mmsi: str, db: Session = Depends(get_db)):
+    if mmsi == settings.vessel_mmsi:
+        positions = position_cache_service.get_positions()
+        if not positions:
+            raise HTTPException(status_code=404, detail="Position not found")
+        return positions[-1]
     position = (
         db.query(Position)
         .filter(Position.mmsi == mmsi)
@@ -47,12 +59,20 @@ async def get_positions_in_range(
     to_ts: datetime | None = None,
     db: Session = Depends(get_db),
 ):
+    if mmsi == settings.vessel_mmsi:
+        if to_ts is None and await position_cache_service.is_in_cache(from_ts):
+            logger.info(f"Positions are in cache for {mmsi} from {from_ts}")
+            positions = await position_cache_service.get_positions(from_ts)
+            if not positions:
+                raise HTTPException(status_code=404, detail="Positions not found")
+            return positions
+    logger.info(f"Bypassing cache for {mmsi} from {from_ts} to {to_ts}")
     positions = (
         db.query(Position)
         .filter(Position.mmsi == mmsi)
         .filter(Position.timestamp >= from_ts if from_ts else True)
         .filter(Position.timestamp <= to_ts if to_ts else True)
-        .order_by(Position.timestamp.desc())
+        .order_by(Position.timestamp.asc())
         .all()
     )
     if not positions:
