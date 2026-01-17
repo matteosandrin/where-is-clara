@@ -10,15 +10,14 @@ import { PortsListPanel } from "./PortsListPanel";
 import cruiseData from "../data/cruise.json";
 import splitGeoJSON from "geojson-antimeridian-cut";
 import { PortModal } from "./PortModal";
+import { PositionMarker } from "./PositionMarker";
 import { getNextPort, isInPort, createArrowIcon } from "../lib/utils";
 import { DARK_BLUE, GREEN, YELLOW } from "../lib/colors";
 import {
   cruisePathLayerStyle,
   lineLayerStyle,
   lineToNextPortLayerStyle,
-  latestArrowLayerStyle,
   lineToPredictedPositionLayerStyle,
-  predictedArrowLayerStyle,
   arrowLayerStyle,
 } from "../lib/layer-styles";
 import { useSettings } from "../hooks/settings";
@@ -71,37 +70,6 @@ export function HomePage() {
       })),
     };
   }, [positions]);
-
-  const latestPointGeojson = useMemo(() => {
-    if (positions.length === 0) return null;
-    const latest = positions[positions.length - 1];
-    return {
-      type: "Feature" as const,
-      properties: {
-        course: latest.course_over_ground,
-        id: latest.id,
-      },
-      geometry: {
-        type: "Point" as const,
-        coordinates: [latest.longitude, latest.latitude],
-      },
-    };
-  }, [positions]);
-
-  const predictedPointGeojson = useMemo(() => {
-    if (!predictedPosition) return null;
-    return {
-      type: "Feature" as const,
-      properties: {
-        course: predictedPosition.course_over_ground,
-        id: predictedPosition.id,
-      },
-      geometry: {
-        type: "Point" as const,
-        coordinates: [predictedPosition.longitude, predictedPosition.latitude],
-      },
-    };
-  }, [predictedPosition]);
 
   const lineToPredictedPositionGeojson = useMemo(() => {
     if (positions.length === 0 || !predictedPosition) return null;
@@ -285,7 +253,7 @@ export function HomePage() {
         style={{ width: "100%", height: "100%" }}
         onLoad={onMapLoad}
         onClick={onPointClick}
-        interactiveLayerIds={["arrows", "latest-arrow", "predicted-arrow"]}
+        interactiveLayerIds={["arrows"]}
         projection={"mercator"}
       >
         <Source id="cruise-path" type="geojson" data={cruisePathGeojson}>
@@ -330,19 +298,29 @@ export function HomePage() {
             <Layer {...arrowLayerStyle} />
           </Source>
         )}
-        {latestPointGeojson && !predictedPosition && (
-          <Source id="latest-arrow" type="geojson" data={latestPointGeojson}>
-            <Layer {...latestArrowLayerStyle} />
-          </Source>
-        )}
-        {predictedPointGeojson && (
-          <Source
-            id="predicted-arrow"
-            type="geojson"
-            data={predictedPointGeojson}
+        {/* Position marker for latest/predicted position */}
+        {positions.length > 0 && (
+          <Marker
+            longitude={
+              predictedPosition
+                ? predictedPosition.longitude
+                : positions[positions.length - 1].longitude
+            }
+            latitude={
+              predictedPosition
+                ? predictedPosition.latitude
+                : positions[positions.length - 1].latitude
+            }
+            anchor="center"
+            onClick={(e) => {
+              e.originalEvent.stopPropagation();
+              setSelectedPosition(
+                predictedPosition || positions[positions.length - 1],
+              );
+            }}
           >
-            <Layer {...predictedArrowLayerStyle} />
-          </Source>
+            <PositionMarker isPredicted={predictedPosition !== null} />
+          </Marker>
         )}
         {selectedPosition && (
           <PositionModal
