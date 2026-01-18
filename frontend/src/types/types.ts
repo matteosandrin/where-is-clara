@@ -1,6 +1,5 @@
 export interface Position {
   id: string;
-  mmsi: string;
   latitude: number;
   longitude: number;
   timestamp: string;

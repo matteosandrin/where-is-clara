@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from app.database import get_db
@@ -9,7 +10,16 @@ from app.config import get_settings
 from app.services.position_cache_service import get_position_cache_service
 
 
-POSITION_COLUMNS = [Position.id,Position.latitude, Position.longitude, Position.timestamp, Position.speed_over_ground, Position.course_over_ground]
+class PositionResponse(BaseModel):
+    id: int
+    latitude: float
+    longitude: float
+    timestamp: datetime
+    speed_over_ground: float
+    course_over_ground: float
+
+    class Config:
+        from_attributes = True
 
 settings = get_settings()
 
@@ -24,12 +34,12 @@ router = APIRouter(
 position_cache_service = get_position_cache_service()
 
 
-@router.get(f"/latest")
+@router.get("/latest", response_model=PositionResponse)
 async def get_latest_position_default_vessel(db: Session = Depends(get_db)):
     return await get_latest_position(settings.vessel_mmsi, db)
 
 
-@router.get("/latest/{mmsi}")
+@router.get("/latest/{mmsi}", response_model=PositionResponse)
 async def get_latest_position(mmsi: str, db: Session = Depends(get_db)):
     if mmsi == settings.vessel_mmsi:
         positions = position_cache_service.get_positions()
@@ -48,7 +58,7 @@ async def get_latest_position(mmsi: str, db: Session = Depends(get_db)):
     return position
 
 
-@router.get(f"/range")
+@router.get("/range", response_model=list[PositionResponse])
 async def get_positions_in_range_default_vessel(
     from_ts: datetime | None = None,
     to_ts: datetime | None = None,
@@ -57,7 +67,7 @@ async def get_positions_in_range_default_vessel(
     return await get_positions_in_range(settings.vessel_mmsi, from_ts, to_ts, db)
 
 
-@router.get("/range/{mmsi}")
+@router.get("/range/{mmsi}", response_model=list[PositionResponse])
 async def get_positions_in_range(
     mmsi: str,
     from_ts: datetime | None = None,
