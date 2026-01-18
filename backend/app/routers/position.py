@@ -2,10 +2,14 @@ from datetime import datetime
 import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from app.database import get_db
 from app.models import Position
 from app.config import get_settings
 from app.services.position_cache_service import get_position_cache_service
+
+
+POSITION_COLUMNS = [Position.id,Position.latitude, Position.longitude, Position.timestamp, Position.speed_over_ground, Position.course_over_ground]
 
 settings = get_settings()
 
@@ -32,12 +36,13 @@ async def get_latest_position(mmsi: str, db: Session = Depends(get_db)):
         if not positions:
             raise HTTPException(status_code=404, detail="Position not found")
         return positions[-1]
-    position = (
-        db.query(Position)
-        .filter(Position.mmsi == mmsi)
+    stmt = (
+        select(Position)
+        .where(Position.mmsi == mmsi)
         .order_by(Position.timestamp.desc())
-        .first()
+        .limit(1)
     )
+    position = db.execute(stmt).scalars().first()
     if not position:
         raise HTTPException(status_code=404, detail="Position not found")
     return position
@@ -67,14 +72,14 @@ async def get_positions_in_range(
                 raise HTTPException(status_code=404, detail="Positions not found")
             return positions
     logger.info(f"Bypassing cache for {mmsi} from {from_ts} to {to_ts}")
-    positions = (
-        db.query(Position)
-        .filter(Position.mmsi == mmsi)
-        .filter(Position.timestamp >= from_ts if from_ts else True)
-        .filter(Position.timestamp <= to_ts if to_ts else True)
+    stmt = (
+        select(Position)
+        .where(Position.mmsi == mmsi)
+        .where(Position.timestamp >= from_ts if from_ts else True)
+        .where(Position.timestamp <= to_ts if to_ts else True)
         .order_by(Position.timestamp.asc())
-        .all()
     )
+    positions = db.execute(stmt).scalars().all()
     if not positions:
         raise HTTPException(status_code=404, detail="Positions not found")
     return positions
