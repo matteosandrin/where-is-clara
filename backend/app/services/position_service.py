@@ -94,14 +94,11 @@ def fetch_vessel_track(mmsi: str) -> list[dict[str, Any]]:
 
     return out
 
+
 def filter_positions_by_min_distance(min_distance_meters: float = 25.0) -> int:
     db: Session = SessionLocal()
     try:
-        positions = (
-            db.query(Position)
-            .order_by(Position.timestamp.asc())
-            .all()
-        )
+        positions = db.query(Position).order_by(Position.timestamp.asc()).all()
         if len(positions) < 2:
             return 0
         positions_to_delete: list[Position] = []
@@ -126,6 +123,7 @@ def filter_positions_by_min_distance(min_distance_meters: float = 25.0) -> int:
         return deleted_count
     finally:
         db.close()
+
 
 class PositionService:
     """Service that polls VesselFinder API and stores new positions in DB."""
@@ -216,6 +214,7 @@ class PositionService:
 
         finally:
             db.close()
+
 
 _position_service: PositionService | None = None
 

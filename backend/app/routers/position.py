@@ -21,6 +21,7 @@ class PositionResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 settings = get_settings()
 
 logging.basicConfig(level=logging.INFO)
