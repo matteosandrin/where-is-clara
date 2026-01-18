@@ -8,3 +8,4 @@ pydantic-settings==2.7.0
 black==25.11.0
 websockets==14.1
 requests==2.32.5
+brotli-asgi==1.6.0

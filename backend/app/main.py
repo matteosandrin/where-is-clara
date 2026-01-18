@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from brotli_asgi import BrotliMiddleware
 from contextlib import asynccontextmanager
 from .database import init_db
 from .config import get_settings
@@ -45,6 +46,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(BrotliMiddleware)
 
 app.include_router(position_router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
