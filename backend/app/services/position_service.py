@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 import requests
+from haversine import haversine, Unit
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
@@ -93,6 +94,38 @@ def fetch_vessel_track(mmsi: str) -> list[dict[str, Any]]:
 
     return out
 
+def filter_positions_by_min_distance(min_distance_meters: float = 25.0) -> int:
+    db: Session = SessionLocal()
+    try:
+        positions = (
+            db.query(Position)
+            .order_by(Position.timestamp.asc())
+            .all()
+        )
+        if len(positions) < 2:
+            return 0
+        positions_to_delete: list[Position] = []
+        i = 0
+        while i < len(positions) - 1:
+            current = positions[i]
+            next_pos = positions[i + 1]
+            current_coords = (current.latitude, current.longitude)
+            next_coords = (next_pos.latitude, next_pos.longitude)
+            distance_m = haversine(current_coords, next_coords, unit=Unit.METERS)
+            if distance_m < min_distance_meters:
+                positions_to_delete.append(current)
+            i += 1
+        for pos in positions_to_delete:
+            db.delete(pos)
+        db.commit()
+        deleted_count = len(positions_to_delete)
+        if deleted_count > 0:
+            logger.info(
+                f"Deleted {deleted_count} positions closer than {min_distance_meters}m to the next position"
+            )
+        return deleted_count
+    finally:
+        db.close()
 
 class PositionService:
     """Service that polls VesselFinder API and stores new positions in DB."""
@@ -100,6 +133,7 @@ class PositionService:
     def __init__(self):
         self._poll_task: asyncio.Task | None = None
         self._running = False
+        filter_positions_by_min_distance()
         self._position_cache_service = get_position_cache_service()
 
     async def start(self):
@@ -176,11 +210,12 @@ class PositionService:
             db.commit()
             logger.info(f"Stored {len(new_points)} new position(s) for MMSI {MMSI}")
 
+            filter_positions_by_min_distance()
+
             await self._position_cache_service.refresh_cache()
 
         finally:
             db.close()
-
 
 _position_service: PositionService | None = None
 
