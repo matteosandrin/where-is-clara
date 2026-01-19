@@ -17,7 +17,7 @@ export function PositionMarker({
       onClick={onClick}
     >
       <div
-        className="relative w-12 h-12 rounded-full overflow-hidden border-3 shadow-lg z-10"
+        className="relative w-10 h-10 rounded-full overflow-hidden border-2 shadow-lg z-10"
         style={{
           borderColor: ringColor,
           boxShadow: `0 4px 14px rgba(0,0,0,0.4), 0 0 20px ${ringColor}40`,

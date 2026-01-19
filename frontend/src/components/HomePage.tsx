@@ -273,17 +273,6 @@ export function HomePage() {
             <Layer {...lineToNextPortLayerStyle} />
           </Source>
         )}
-        {ports.map((port, index) => (
-          <Marker
-            key={port.id}
-            longitude={port.lon}
-            latitude={port.lat}
-            anchor="bottom"
-            onClick={() => setSelectedPort(port)}
-          >
-            <PortPin number={index + 1} />
-          </Marker>
-        ))}
         {lineToPredictedPositionGeojson && (
           <Source
             id="line-to-predicted-position"
@@ -322,6 +311,17 @@ export function HomePage() {
             <PositionMarker isPredicted={predictedPosition !== null} />
           </Marker>
         )}
+        {ports.map((port, index) => (
+          <Marker
+            key={port.id}
+            longitude={port.lon}
+            latitude={port.lat}
+            anchor="bottom"
+            onClick={() => setSelectedPort(port)}
+          >
+            <PortPin number={index + 1} />
+          </Marker>
+        ))}
         {selectedPosition && (
           <PositionModal
             position={selectedPosition}
