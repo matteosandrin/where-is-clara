@@ -31,7 +31,7 @@ const ports = cruiseData.ports.map((port) => port as Port);
 export function HomePage() {
   const mapRef = useRef<MapRef>(null);
   const { settings } = useSettings();
-  const { positions, predictedPosition, loading, error } = usePositions(
+  const { positions, predictedPath, loading, error } = usePositions(
     settings,
     ports,
   );
@@ -72,22 +72,10 @@ export function HomePage() {
   }, [positions]);
 
   const lineToPredictedPositionGeojson = useMemo(() => {
-    if (positions.length === 0 || !predictedPosition) return null;
-    return {
-      type: "Feature" as const,
-      properties: {},
-      geometry: {
-        type: "LineString" as const,
-        coordinates: [
-          [
-            positions[positions.length - 1].longitude,
-            positions[positions.length - 1].latitude,
-          ],
-          [predictedPosition.longitude, predictedPosition.latitude],
-        ],
-      },
-    };
-  }, [positions, predictedPosition]);
+    if (positions.length === 0 || !predictedPath) return null;
+    // Use the path that follows the cruise route
+    return predictedPath.path;
+  }, [positions, predictedPath]);
 
   const lineToNextPortGeojson = useMemo(() => {
     if (
@@ -104,18 +92,18 @@ export function HomePage() {
         type: "LineString" as const,
         coordinates: [
           [
-            predictedPosition
-              ? predictedPosition.longitude
+            predictedPath
+              ? predictedPath.endPosition.longitude
               : positions[positions.length - 1].longitude,
-            predictedPosition
-              ? predictedPosition.latitude
+            predictedPath
+              ? predictedPath.endPosition.latitude
               : positions[positions.length - 1].latitude,
           ],
           [nextPort.lon, nextPort.lat],
         ],
       },
     };
-  }, [positions, predictedPosition, ports]);
+  }, [positions, predictedPath, ports]);
 
   const cruisePathGeojson = useMemo(() => {
     const lineString = {
@@ -157,7 +145,7 @@ export function HomePage() {
       }
 
       const clickedFeature = features[0];
-      const matchingPosition = [...positions, predictedPosition].find(
+      const matchingPosition = [...positions, predictedPath?.endPosition].find(
         (p) => p && p.id === clickedFeature.properties.id,
       );
       if (!matchingPosition) {
@@ -165,7 +153,7 @@ export function HomePage() {
       }
       setSelectedPosition(matchingPosition);
     },
-    [positions, predictedPosition],
+    [positions, predictedPath],
   );
 
   const handleClosePositionModal = useCallback(() => {
@@ -189,21 +177,21 @@ export function HomePage() {
       return { longitude: 0, latitude: 0, zoom: 2 };
     }
     // Center on the most recent position
-    const latest = predictedPosition
-      ? predictedPosition
+    const latest = predictedPath
+      ? predictedPath.endPosition
       : positions[positions.length - 1];
     return {
       longitude: latest.longitude,
       latitude: latest.latitude,
       zoom: 6,
     };
-  }, [positions, predictedPosition]);
+  }, [positions, predictedPath]);
 
   useEffect(() => {
     if (!positions || positions.length === 0) return;
     console.log(positions);
-    const latest = predictedPosition
-      ? predictedPosition
+    const latest = predictedPath
+      ? predictedPath.endPosition
       : positions[positions.length - 1];
     const nextPort = getNextPort(ports, latest);
     if (!isInPort(ports, latest) && nextPort) {
@@ -215,7 +203,7 @@ export function HomePage() {
         mapRef.current?.fitBounds(bounds, { padding: isMobile ? 75 : 300 });
       }, 100);
     }
-  }, [positions]);
+  }, [positions, predictedPath]);
 
   if (loading) {
     return (
@@ -291,24 +279,24 @@ export function HomePage() {
         {positions.length > 0 && (
           <Marker
             longitude={
-              predictedPosition
-                ? predictedPosition.longitude
+              predictedPath
+                ? predictedPath.endPosition.longitude
                 : positions[positions.length - 1].longitude
             }
             latitude={
-              predictedPosition
-                ? predictedPosition.latitude
+              predictedPath
+                ? predictedPath.endPosition.latitude
                 : positions[positions.length - 1].latitude
             }
             anchor="center"
             onClick={(e) => {
               e.originalEvent.stopPropagation();
               setSelectedPosition(
-                predictedPosition || positions[positions.length - 1],
+                predictedPath?.endPosition || positions[positions.length - 1],
               );
             }}
           >
-            <PositionMarker isPredicted={predictedPosition !== null} />
+            <PositionMarker isPredicted={predictedPath !== null} />
           </Marker>
         )}
         {ports.map((port, index) => (
@@ -344,7 +332,7 @@ export function HomePage() {
           <CurrentPositionPanel
             position={positions[positions.length - 1]}
             title={settings?.vessel_name || ""}
-            isPredicted={predictedPosition !== null}
+            isPredicted={predictedPath !== null}
           />
 
           <PortsListPanel

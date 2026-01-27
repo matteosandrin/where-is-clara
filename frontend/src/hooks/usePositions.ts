@@ -1,13 +1,24 @@
 import { useEffect, useState, useCallback } from "react";
 import { positionApi } from "../lib/client";
 import type { Port, Position, Settings } from "../types/types";
-import { shouldPredictPosition, predictPosition } from "../lib/utils";
+import {
+  shouldPredictPosition,
+  predictPath,
+  type PredictedPath,
+} from "../lib/utils";
+import cruiseData from "../data/cruise.json";
 
 const FETCH_INTERVAL_MS = 60 * 1000;
 
+// Create the cruise path LineString from the cruise data
+const cruisePath = {
+  type: "LineString" as const,
+  coordinates: cruiseData.points,
+};
+
 export function usePositions(settings: Settings | null, ports: Port[]) {
   const [positions, setPositions] = useState<Position[]>([]);
-  const [predictedPosition, setPredictedPosition] = useState<Position | null>(
+  const [predictedPath, setPredictedPath] = useState<PredictedPath | null>(
     null,
   );
   const [loading, setLoading] = useState(true);
@@ -27,13 +38,13 @@ export function usePositions(settings: Settings | null, ports: Port[]) {
           (a, b) =>
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
         );
-        // Predict position if last position is older than 5 minutes
+        // Predict path if last position is older than 5 minutes
         const lastPosition = sortedPositions[sortedPositions.length - 1];
         if (shouldPredictPosition(ports, lastPosition)) {
-          const predicted = predictPosition(lastPosition);
-          setPredictedPosition(predicted);
+          const predicted = predictPath(lastPosition, cruisePath);
+          setPredictedPath(predicted);
         } else {
-          setPredictedPosition(null);
+          setPredictedPath(null);
         }
         setPositions(sortedPositions);
       } catch (err) {
@@ -67,5 +78,5 @@ export function usePositions(settings: Settings | null, ports: Port[]) {
     );
     return () => clearInterval(interval);
   }, [settings, fetchPositions]);
-  return { positions, predictedPosition, loading, error };
+  return { positions, predictedPath, loading, error };
 }

@@ -1,5 +1,15 @@
 import distance from "@turf/distance";
+import nearestPointOnLine from "@turf/nearest-point-on-line";
+import lineSlice from "@turf/line-slice";
+import along from "@turf/along";
+import length from "@turf/length";
+import type { LineString, Feature, Point } from "geojson";
 import type { Port, Position } from "../types/types";
+
+export interface PredictedPath {
+  path: Feature<LineString>;
+  endPosition: Position;
+}
 
 // Create an arrow icon as a data URL
 export function createArrowIcon(
@@ -101,38 +111,55 @@ export function isInPort(ports: Port[], currentPosition: Position): boolean {
   return closestPort.distance < 1000;
 }
 
-export function predictPosition(position: Position): Position {
-  const { latitude, longitude, course_over_ground, speed_over_ground } =
-    position;
+export function predictPath(
+  position: Position,
+  cruisePath: LineString,
+): PredictedPath | null {
+  const { latitude, longitude, speed_over_ground } = position;
   const elapsedMs =
     new Date().getTime() - new Date(position.timestamp).getTime();
 
   // Convert elapsed time from milliseconds to hours
   const elapsedHours = elapsedMs / (1000 * 60 * 60);
-
-  // Distance traveled in nautical miles
+  // 1 nautical mile = 1.852 km
   const distanceNm = speed_over_ground * elapsedHours;
+  const distanceKm = distanceNm * 1.852;
+  const lineFeature: Feature<LineString> = {
+    type: "Feature",
+    properties: {},
+    geometry: cruisePath,
+  };
+  const currentPoint: Feature<Point> = {
+    type: "Feature",
+    properties: {},
+    geometry: {
+      type: "Point",
+      coordinates: [longitude, latitude],
+    },
+  };
 
-  // Convert course from degrees to radians
-  const courseRad = (course_over_ground * Math.PI) / 180;
-  const latRad = (latitude * Math.PI) / 180;
-
-  // 1 nautical mile = 1 arc minute of latitude = 1/60 degree
-  // Change in latitude (degrees)
-  const deltaLat = (distanceNm * Math.cos(courseRad)) / 60;
-
-  // Change in longitude (degrees) - adjusted for latitude
-  // At higher latitudes, longitude lines converge, so we divide by cos(lat)
-  const deltaLon = (distanceNm * Math.sin(courseRad)) / (60 * Math.cos(latRad));
-
-  return {
+  const nearestPoint = nearestPointOnLine(lineFeature, currentPoint);
+  const startDistance = nearestPoint.properties.location ?? 0;
+  const endDistance = startDistance + distanceKm;
+  const totalLength = length(lineFeature, { units: "kilometers" });
+  const clampedEndDistance = Math.min(endDistance, totalLength);
+  const endPoint = along(lineFeature, clampedEndDistance, {
+    units: "kilometers",
+  });
+  const pathSegment = lineSlice(nearestPoint, endPoint, lineFeature);
+  const endCoords = endPoint.geometry.coordinates;
+  const predictedEndPosition: Position = {
     ...position,
     id: position.id + "-predicted",
     timestamp: new Date().toISOString(),
-    latitude: latitude + deltaLat,
-    longitude: longitude + deltaLon,
+    latitude: endCoords[1],
+    longitude: endCoords[0],
     is_predicted: true,
-  } as Position;
+  };
+  return {
+    path: pathSegment,
+    endPosition: predictedEndPosition,
+  };
 }
 
 export function shouldPredictPosition(
