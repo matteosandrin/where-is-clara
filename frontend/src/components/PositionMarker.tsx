@@ -13,7 +13,7 @@ export function PositionMarker({
 
   return (
     <div
-      className="relative flex items-center justify-center cursor-pointer"
+      className="relative flex flex-col items-center cursor-pointer"
       onClick={onClick}
     >
       <div
@@ -29,6 +29,15 @@ export function PositionMarker({
           className="w-full h-full object-cover"
         />
       </div>
+      <div
+        className="w-0 h-0 -mt-1"
+        style={{
+          borderLeft: "12px solid transparent",
+          borderRight: "12px solid transparent",
+          borderTop: `12px solid ${ringColor}`,
+          filter: `drop-shadow(0 2px 4px rgba(0,0,0,0.3))`,
+        }}
+      />
     </div>
   );
 }

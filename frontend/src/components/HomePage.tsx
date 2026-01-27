@@ -288,7 +288,7 @@ export function HomePage() {
                 ? predictedPath.endPosition.latitude
                 : positions[positions.length - 1].latitude
             }
-            anchor="center"
+            anchor="bottom"
             onClick={(e) => {
               e.originalEvent.stopPropagation();
               setSelectedPosition(
