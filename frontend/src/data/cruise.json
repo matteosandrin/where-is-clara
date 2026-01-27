@@ -678,23 +678,6 @@
       "timezone": "America/Costa_Rica"
     },
     {
-      "dep_datetime": "2026-01-28T19:00:00-06:00",
-      "lat": 13.92551,
-      "lon": -90.79281,
-      "day": "25",
-      "id": "471",
-      "title": "Puerto Quetzal",
-      "country": {
-        "flag": {
-          "code": "gt",
-          "name": "Guatemala"
-        },
-        "title": "Guatemala"
-      },
-      "locode": "GTPRQ",
-      "timezone": "America/Guatemala"
-    },
-    {
       "dep_datetime": "2026-01-31T15:00:00-06:00",
       "lat": 20.65496,
       "lon": -105.23722,
