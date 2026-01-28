@@ -79,8 +79,6 @@ async def get_positions_in_range(
         if to_ts is None and await position_cache_service.is_in_cache(from_ts):
             logger.info(f"Positions are in cache for {mmsi} from {from_ts}")
             positions = await position_cache_service.get_positions(from_ts)
-            if not positions:
-                raise HTTPException(status_code=404, detail="Positions not found")
             return positions
     logger.info(f"Bypassing cache for {mmsi} from {from_ts} to {to_ts}")
     stmt = (
@@ -91,6 +89,4 @@ async def get_positions_in_range(
         .order_by(Position.timestamp.asc())
     )
     positions = db.execute(stmt).scalars().all()
-    if not positions:
-        raise HTTPException(status_code=404, detail="Positions not found")
     return positions

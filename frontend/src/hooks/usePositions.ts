@@ -33,6 +33,11 @@ export function usePositions(settings: Settings | null, ports: Port[]) {
           fromTs,
           toTs,
         );
+        if (data.length === 0) {
+          setPositions([]);
+          setPredictedPath(null);
+          return;
+        }
         // Sort by timestamp ascending for proper line drawing
         const sortedPositions = data.sort(
           (a, b) =>

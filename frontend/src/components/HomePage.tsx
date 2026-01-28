@@ -189,7 +189,6 @@ export function HomePage() {
 
   useEffect(() => {
     if (!positions || positions.length === 0) return;
-    console.log(positions);
     const latest = predictedPath
       ? predictedPath.endPosition
       : positions[positions.length - 1];
