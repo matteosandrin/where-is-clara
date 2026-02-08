@@ -46,6 +46,62 @@ export function createArrowIcon(
   return img;
 }
 
+// Interpolate intermediate points along a great-circle arc between two coordinates
+function interpolateGreatCircle(
+  start: number[],
+  end: number[],
+  numSegments: number,
+): number[][] {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const toDeg = (rad: number) => (rad * 180) / Math.PI;
+
+  const [lon1, lat1] = [toRad(start[0]), toRad(start[1])];
+  const [lon2, lat2] = [toRad(end[0]), toRad(end[1])];
+
+  const d = Math.acos(
+    Math.sin(lat1) * Math.sin(lat2) +
+      Math.cos(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1),
+  );
+  if (d === 0) return [];
+
+  const points: number[][] = [];
+  for (let i = 1; i < numSegments; i++) {
+    const f = i / numSegments;
+    const a = Math.sin((1 - f) * d) / Math.sin(d);
+    const b = Math.sin(f * d) / Math.sin(d);
+    const x =
+      a * Math.cos(lat1) * Math.cos(lon1) +
+      b * Math.cos(lat2) * Math.cos(lon2);
+    const y =
+      a * Math.cos(lat1) * Math.sin(lon1) +
+      b * Math.cos(lat2) * Math.sin(lon2);
+    const z = a * Math.sin(lat1) + b * Math.sin(lat2);
+    const lat = Math.atan2(z, Math.sqrt(x * x + y * y));
+    const lon = Math.atan2(y, x);
+    points.push([toDeg(lon), toDeg(lat)]);
+  }
+  return points;
+}
+
+// Add intermediate great-circle points to segments longer than maxSegmentKm
+export function densifyLineString(
+  coordinates: number[][],
+  maxSegmentKm: number = 100,
+): number[][] {
+  const result: number[][] = [coordinates[0]];
+  for (let i = 1; i < coordinates.length; i++) {
+    const start = coordinates[i - 1];
+    const end = coordinates[i];
+    const segmentDist = distance(start, end, { units: "kilometers" });
+    if (segmentDist > maxSegmentKm) {
+      const numSegments = Math.ceil(segmentDist / maxSegmentKm);
+      result.push(...interpolateGreatCircle(start, end, numSegments));
+    }
+    result.push(end);
+  }
+  return result;
+}
+
 export function formatTimestamp(timestamp: string): string {
   const date = new Date(timestamp);
   return date.toLocaleString(undefined, {
@@ -150,6 +206,8 @@ export function predictPath(
     units: "kilometers",
   });
   const pathSegment = lineSlice(nearestPoint, endPoint, lineFeature);
+  // Prepend the actual position so the predicted path connects to the real marker
+  pathSegment.geometry.coordinates.unshift([longitude, latitude]);
   const endCoords = endPoint.geometry.coordinates;
   const predictedEndPosition: Position = {
     ...position,

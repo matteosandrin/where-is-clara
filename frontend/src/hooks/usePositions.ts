@@ -4,16 +4,18 @@ import type { Port, Position, Settings } from "../types/types";
 import {
   shouldPredictPosition,
   predictPath,
+  densifyLineString,
   type PredictedPath,
 } from "../lib/utils";
 import cruiseData from "../data/cruise.json";
 
 const FETCH_INTERVAL_MS = 60 * 1000;
 
-// Create the cruise path LineString from the cruise data
+// Create the cruise path LineString from the cruise data, with great-circle
+// interpolation on long segments so the predicted path follows the curve
 const cruisePath = {
   type: "LineString" as const,
-  coordinates: cruiseData.points,
+  coordinates: densifyLineString(cruiseData.points),
 };
 
 export function usePositions(settings: Settings | null, ports: Port[]) {

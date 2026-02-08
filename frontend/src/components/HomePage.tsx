@@ -11,7 +11,12 @@ import cruiseData from "../data/cruise.json";
 import splitGeoJSON from "geojson-antimeridian-cut";
 import { PortModal } from "./PortModal";
 import { PositionMarker } from "./PositionMarker";
-import { getNextPort, isInPort, createArrowIcon } from "../lib/utils";
+import {
+  getNextPort,
+  isInPort,
+  createArrowIcon,
+  densifyLineString,
+} from "../lib/utils";
 import { DARK_BLUE, GREEN, YELLOW } from "../lib/colors";
 import {
   cruisePathLayerStyle,
@@ -108,7 +113,7 @@ export function HomePage() {
   const cruisePathGeojson = useMemo(() => {
     const lineString = {
       type: "LineString" as const,
-      coordinates: cruiseData.points,
+      coordinates: densifyLineString(cruiseData.points),
     };
     return splitGeoJSON(lineString);
   }, []);
