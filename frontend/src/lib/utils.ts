@@ -206,8 +206,9 @@ export function predictPath(
     units: "kilometers",
   });
   const pathSegment = lineSlice(nearestPoint, endPoint, lineFeature);
-  // Prepend the actual position so the predicted path connects to the real marker
-  pathSegment.geometry.coordinates.unshift([longitude, latitude]);
+  // Replace the nearest-point-on-route with the actual position so the
+  // predicted path starts at the real marker without a perpendicular kink
+  pathSegment.geometry.coordinates[0] = [longitude, latitude];
   const endCoords = endPoint.geometry.coordinates;
   const predictedEndPosition: Position = {
     ...position,
