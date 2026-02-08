@@ -21,7 +21,6 @@ import { DARK_BLUE, GREEN, YELLOW } from "../lib/colors";
 import {
   cruisePathLayerStyle,
   lineLayerStyle,
-  lineToNextPortLayerStyle,
   lineToPredictedPositionLayerStyle,
   arrowLayerStyle,
 } from "../lib/layer-styles";
@@ -81,34 +80,6 @@ export function HomePage() {
     // Use the path that follows the cruise route
     return predictedPath.path;
   }, [positions, predictedPath]);
-
-  const lineToNextPortGeojson = useMemo(() => {
-    if (
-      positions.length === 0 ||
-      isInPort(ports, positions[positions.length - 1])
-    )
-      return null;
-    const nextPort = getNextPort(ports, positions[positions.length - 1]);
-    if (!nextPort) return null;
-    return {
-      type: "Feature" as const,
-      properties: {},
-      geometry: {
-        type: "LineString" as const,
-        coordinates: [
-          [
-            predictedPath
-              ? predictedPath.endPosition.longitude
-              : positions[positions.length - 1].longitude,
-            predictedPath
-              ? predictedPath.endPosition.latitude
-              : positions[positions.length - 1].latitude,
-          ],
-          [nextPort.lon, nextPort.lat],
-        ],
-      },
-    };
-  }, [positions, predictedPath, ports]);
 
   const cruisePathGeojson = useMemo(() => {
     const lineString = {
@@ -254,15 +225,6 @@ export function HomePage() {
         {lineGeojson && (
           <Source id="route" type="geojson" data={lineGeojson}>
             <Layer {...lineLayerStyle} />
-          </Source>
-        )}
-        {lineToNextPortGeojson && (
-          <Source
-            id="line-to-next-port"
-            type="geojson"
-            data={lineToNextPortGeojson}
-          >
-            <Layer {...lineToNextPortLayerStyle} />
           </Source>
         )}
         {lineToPredictedPositionGeojson && (

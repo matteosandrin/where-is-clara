@@ -48,22 +48,6 @@ export const latestArrowLayerStyle: LayerProps = {
   },
 };
 
-export const lineToNextPortLayerStyle: LayerProps = {
-  id: "line-to-next-port",
-  type: "line",
-  paint: {
-    "line-color": "#ffffff",
-    "line-width": 2,
-    "line-opacity": 0.4,
-    "line-dasharray": [8, 5],
-  },
-  layout: {
-    "line-cap": "round",
-    "line-join": "round",
-  },
-  minzoom: 4,
-};
-
 export const predictedArrowLayerStyle: LayerProps = {
   id: "predicted-arrow",
   type: "symbol",
