@@ -124,6 +124,9 @@ export function predictPath(
   // 1 nautical mile = 1.852 km
   const distanceNm = speed_over_ground * elapsedHours;
   const distanceKm = distanceNm * 1.852;
+  if (distanceKm <= 0) {
+    return null;
+  }
   const lineFeature: Feature<LineString> = {
     type: "Feature",
     properties: {},
@@ -142,7 +145,7 @@ export function predictPath(
   const startDistance = nearestPoint.properties.location ?? 0;
   const endDistance = startDistance + distanceKm;
   const totalLength = length(lineFeature, { units: "kilometers" });
-  const clampedEndDistance = Math.min(endDistance, totalLength);
+  const clampedEndDistance = Math.max(startDistance, Math.min(endDistance, totalLength));
   const endPoint = along(lineFeature, clampedEndDistance, {
     units: "kilometers",
   });
