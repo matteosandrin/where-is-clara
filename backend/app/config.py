@@ -9,8 +9,6 @@ _ENV_FILE = _THIS_DIR.parent / ".env"
 class Settings(BaseSettings):
     database_url: str  # required
     vessel_mmsi: str  # required
-    aisstream_api_key: str  # required
-    aisstream_url: str = "wss://stream.aisstream.io/v0/stream"
     debug: bool = True
 
     class Config:
