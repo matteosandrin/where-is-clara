@@ -77,8 +77,8 @@ export function HomePage() {
 
   const lineToPredictedPositionGeojson = useMemo(() => {
     if (positions.length === 0 || !predictedPath) return null;
-    // Use the path that follows the cruise route
-    return predictedPath.path;
+    // Use the path that follows the cruise route, split at the antimeridian
+    return splitGeoJSON(predictedPath.path);
   }, [positions, predictedPath]);
 
   const cruisePathGeojson = useMemo(() => {
