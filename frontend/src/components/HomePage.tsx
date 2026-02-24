@@ -47,14 +47,14 @@ export function HomePage() {
 
   const lineGeojson = useMemo(() => {
     if (positions.length === 0) return null;
-    return {
+    return splitGeoJSON({
       type: "Feature" as const,
       properties: {},
       geometry: {
         type: "LineString" as const,
         coordinates: positions.map((p) => [p.longitude, p.latitude]),
       },
-    };
+    });
   }, [positions]);
 
   const pointsGeojson = useMemo(() => {
@@ -115,6 +115,7 @@ export function HomePage() {
 
   const onPointClick = useCallback(
     (event: any) => {
+      console.log("Map click:", event.lngLat.lng, event.lngLat.lat);
       const features = event.features;
       if (!features || features.length === 0) {
         return;
