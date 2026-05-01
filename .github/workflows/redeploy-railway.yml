@@ -1,0 +1,29 @@
+name: Redeploy Railway
+
+# This workflow redeploys the Railway deployment at 08:00 UTC (3:00 AM EST).
+# The reason why we need this is to assign a fresh IP to the backend, so that
+# Vesselfinder can't block it so easily.
+
+on:
+  schedule:
+    # GitHub Actions schedules use UTC. 08:00 UTC is 3:00 AM EST.
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: railway-redeploy
+  cancel-in-progress: false
+
+jobs:
+  redeploy:
+    runs-on: ubuntu-latest
+    container: ghcr.io/railwayapp/cli:latest
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+    steps:
+      - name: Redeploy latest Railway deployment
+        run: railway redeploy --service "$RAILWAY_SERVICE_ID" --yes
