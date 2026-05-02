@@ -53,7 +53,12 @@ def fetch_vessel_track(mmsi: str) -> list[dict[str, Any]]:
         }
     )
 
-    r = session.get(url)
+    proxies = (
+        {"http": settings.proxy_url, "https": settings.proxy_url}
+        if settings.proxy_url
+        else None
+    )
+    r = session.get(url, proxies=proxies, timeout=30)
     r.raise_for_status()
 
     data = r.content

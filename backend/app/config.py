@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     database_url: str  # required
     vessel_mmsi: str  # required
     debug: bool = True
+    proxy_url: str | None = None
 
     class Config:
         env_file = _ENV_FILE
