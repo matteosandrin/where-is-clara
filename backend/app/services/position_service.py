@@ -14,7 +14,6 @@ from app.models import Position
 from app.services.position_cache_service import get_position_cache_service
 from ..config import get_settings
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
