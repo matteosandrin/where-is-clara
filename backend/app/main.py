@@ -5,8 +5,11 @@ from brotli_asgi import BrotliMiddleware
 from contextlib import asynccontextmanager
 from .database import init_db
 from .config import get_settings
+from .logging_config import configure_logging
 from .routers import position_router, settings_router
 from .services import get_position_service
+
+configure_logging()
 
 
 @asynccontextmanager

@@ -24,7 +24,6 @@ class PositionResponse(BaseModel):
 
 settings = get_settings()
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
