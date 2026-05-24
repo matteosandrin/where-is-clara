@@ -8,6 +8,7 @@ import {
   type PredictedPath,
 } from "../lib/utils";
 import cruiseData from "../data/cruise.json";
+import { STATIC_MODE } from "../config";
 
 const FETCH_INTERVAL_MS = 60 * 1000;
 
@@ -64,6 +65,36 @@ export function usePositions(settings: Settings | null, ports: Port[]) {
   );
 
   useEffect(() => {
+    // Static mode: load the full cruise once from public/positions.json with
+    // no backend, no prediction, and no polling.
+    if (STATIC_MODE) {
+      const loadStaticPositions = async () => {
+        try {
+          const response = await fetch(
+            `${import.meta.env.BASE_URL}positions.json`,
+          );
+          if (!response.ok) {
+            throw new Error(`Failed to load positions.json: ${response.status}`);
+          }
+          const data: Position[] = await response.json();
+          const sortedPositions = data.sort(
+            (a, b) =>
+              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+          );
+          setPositions(sortedPositions);
+          setPredictedPath(null);
+        } catch (err) {
+          setError(
+            err instanceof Error ? err.message : "Failed to load positions",
+          );
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadStaticPositions();
+      return;
+    }
+
     if (!settings) return;
     const cruiseStartTs = settings?.cruise_start_date || null;
     const loadPositions = async () => {
