@@ -3,6 +3,7 @@ import type { Port, Position } from "../types/types";
 import { getClosestPort, getNextPort, isInPort } from "../lib/utils";
 import { getFlagEmoji, formatDateInTimezone } from "../lib/utils";
 import { ChevronUp, X } from "lucide-react";
+import { STATIC_MODE } from "../config";
 
 interface PortsListPanelProps {
   ports: Port[];
@@ -54,6 +55,9 @@ export function PortsListPanel({
   const getPortStatus = (
     port: Port,
   ): "past" | "current" | "next" | "future" => {
+    // In static mode the whole cruise is shown at once; render every port
+    // normally rather than de-emphasizing past ports or highlighting one.
+    if (STATIC_MODE) return "future";
     if (currentPort && port.id === currentPort.id) return "current";
     if (nextPort && port.id === nextPort.id) return "next";
 

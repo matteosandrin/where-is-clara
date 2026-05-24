@@ -26,6 +26,7 @@ import {
 } from "../lib/layer-styles";
 import { useSettings } from "../hooks/settings";
 import { usePositions } from "../hooks/usePositions";
+import { STATIC_MODE } from "../config";
 import mapboxgl from "mapbox-gl";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -166,6 +167,16 @@ export function HomePage() {
 
   useEffect(() => {
     if (!positions || positions.length === 0) return;
+    // Static mode: fit the whole cruise route on load.
+    if (STATIC_MODE) {
+      const bounds = new mapboxgl.LngLatBounds();
+      positions.forEach((p) => bounds.extend([p.longitude, p.latitude]));
+      const isMobile = window.innerWidth <= 768;
+      setTimeout(() => {
+        mapRef.current?.fitBounds(bounds, { padding: isMobile ? 40 : 80 });
+      }, 100);
+      return;
+    }
     const latest = predictedPath
       ? predictedPath.endPosition
       : positions[positions.length - 1];
@@ -243,7 +254,7 @@ export function HomePage() {
           </Source>
         )}
         {/* Position marker for latest/predicted position */}
-        {positions.length > 0 && (
+        {!STATIC_MODE && positions.length > 0 && (
           <Marker
             longitude={
               predictedPath
@@ -296,11 +307,13 @@ export function HomePage() {
 
       {positions.length > 0 && (
         <>
-          <CurrentPositionPanel
-            position={positions[positions.length - 1]}
-            title={settings?.vessel_name || ""}
-            isPredicted={predictedPath !== null}
-          />
+          {!STATIC_MODE && (
+            <CurrentPositionPanel
+              position={positions[positions.length - 1]}
+              title={settings?.vessel_name || ""}
+              isPredicted={predictedPath !== null}
+            />
+          )}
 
           <PortsListPanel
             ports={ports}
