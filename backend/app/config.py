@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     vessel_mmsi: str  # required
     debug: bool = True
     proxy_url: str | None = None
+    polling_enabled: bool = True
 
     class Config:
         env_file = _ENV_FILE

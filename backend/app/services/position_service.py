@@ -141,6 +141,12 @@ class PositionService:
     async def start(self):
         if self._running:
             return
+        if not settings.polling_enabled:
+            logger.info(
+                "VesselFinder polling disabled "
+                "(POLLING_ENABLED=false); skipping poll loop"
+            )
+            return
         self._running = True
         self._poll_task = asyncio.create_task(self._poll_loop())
         logger.info(f"PositionService started for MMSI {MMSI}")
