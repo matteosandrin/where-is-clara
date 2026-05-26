@@ -5,9 +5,10 @@ name: Redeploy Railway
 # Vesselfinder can't block it so easily.
 
 on:
-  schedule:
-    # GitHub Actions schedules use UTC. 08:00 UTC is 3:00 AM EST.
-    - cron: "0 8 * * *"
+  # Recurring schedule disabled. Re-enable by uncommenting the cron trigger below.
+  # schedule:
+  #   # GitHub Actions schedules use UTC. 08:00 UTC is 3:00 AM EST.
+  #   - cron: "0 8 * * *"
   workflow_dispatch:
 
 permissions:
