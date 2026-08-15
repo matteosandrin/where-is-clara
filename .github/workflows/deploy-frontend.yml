@@ -37,8 +37,8 @@ jobs:
       - run: npm run build
         env:
           VITE_MAPBOX_TOKEN: ${{ secrets.VITE_MAPBOX_TOKEN }}
-          VITE_API_HOST: ${{ secrets.VITE_API_HOST }}
-          VITE_SITE_URL: ${{ secrets.VITE_SITE_URL }}
+          VITE_API_HOST: https://api.whereisclara.sandr.in
+          VITE_SITE_URL: https://whereisclara.sandr.in
 
       - name: SPA fallback
         run: cp dist/index.html dist/404.html
